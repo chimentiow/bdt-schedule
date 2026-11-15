@@ -12,6 +12,9 @@ import java.util.Map;
 
 /** Контролер прецеденту «Облік фактичного заняття». */
 public class LessonController {
+    /** Найбільша довжина теми заняття: розмір стовпця lesson.topic. */
+    public static final int MAX_TOPIC_LENGTH = 120;
+
     private final LessonStore store;
     private final Schedule schedule;
     private final Clock clock;
@@ -51,6 +54,9 @@ public class LessonController {
         requireLesson();
         if (topic == null || topic.isBlank()) {
             throw new ScheduleException("Вкажіть тему заняття.");
+        }
+        if (topic.trim().length() > MAX_TOPIC_LENGTH) {
+            throw new ScheduleException("Тема заняття має бути не довшою за " + MAX_TOPIC_LENGTH + " символів.");
         }
         lesson.setTopic(topic.trim());
     }

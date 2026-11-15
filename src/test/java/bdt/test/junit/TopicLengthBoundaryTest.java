@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 
 import bdt.controller.LessonController;
 import bdt.controller.ScheduleController;
+import bdt.controller.ScheduleException;
 import bdt.dao.DataException;
 import bdt.dao.LessonRepository;
 import bdt.dao.RoomCatalog;
@@ -45,15 +46,15 @@ public class TopicLengthBoundaryTest {
         testDb.close();
     }
 
-    /** Реєструє заняття з темою заданої довжини; повертає «збережено» або «відхилено». */
+    /** Реєструє заняття з темою заданої довжини; повертає «збережено» або текст відмови. */
     private String saveLessonWithTopic(int length) {
         controller.openLesson(KARATE, FRIDAY);
-        controller.setTopic(repeat('т', length));
         try {
+            controller.setTopic(repeat('т', length));
             controller.closeLesson();
             return "збережено";
-        } catch (DataException ex) {
-            return "відхилено";
+        } catch (ScheduleException | DataException ex) {
+            return ex.getMessage();
         }
     }
 
@@ -76,8 +77,8 @@ public class TopicLengthBoundaryTest {
 
     @Test
     public void bv81_topic121Characters_isRejectedAndNothingIsSaved() {
-        assertEquals("відхилено", saveLessonWithTopic(121));
-        assertEquals("транзакцію має бути відкочено", 0, savedLessons());
+        assertEquals("Тема заняття має бути не довшою за 120 символів.", saveLessonWithTopic(121));
+        assertEquals("заняття не має зберегтися", 0, savedLessons());
         assertEquals("відмітки відвідування не мають зберегтися", 0,
                 testDb.count("SELECT COUNT(*) FROM attendance a JOIN lesson l ON l.lesson_id = a.lesson_id "
                         + "WHERE l.section_id = ? AND l.lesson_date = ?", KARATE, java.sql.Date.valueOf(FRIDAY)));
