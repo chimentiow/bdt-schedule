@@ -5,14 +5,12 @@ import bdt.controller.ScheduleException;
 import bdt.dao.DataException;
 import bdt.model.AttendanceMark;
 import bdt.model.Lesson;
+import bdt.model.LessonSummary;
 import bdt.model.Section;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import javax.swing.BorderFactory;
@@ -144,21 +142,12 @@ public class JournalPanel extends JPanel {
         history.setRowCount(0);
         Section s = (Section) section.getSelectedItem();
         if (s == null) return;
-        String sql = "SELECT ls.lesson_date, ls.start_time, r.room_number, ls.topic, "
-                + "SUM(CASE WHEN a.present THEN 1 ELSE 0 END) || ' з ' || COUNT(a.participant_id) "
-                + "FROM lesson ls JOIN room r ON r.room_id = ls.room_id "
-                + "LEFT JOIN attendance a ON a.lesson_id = ls.lesson_id WHERE ls.section_id = ? "
-                + "GROUP BY ls.lesson_id, ls.lesson_date, ls.start_time, r.room_number, ls.topic "
-                + "ORDER BY ls.lesson_date DESC, ls.start_time DESC";
-        try (PreparedStatement ps = main.getDatabase().getConnection().prepareStatement(sql)) {
-            ps.setInt(1, s.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    history.addRow(new Object[]{rs.getDate(1), rs.getTime(2).toString().substring(0, 5),
-                            rs.getString(3), rs.getString(4), rs.getString(5)});
-                }
+        try {
+            for (LessonSummary l : controller.getHistory(s.getId())) {
+                history.addRow(new Object[]{l.getDate(), l.getStartText(), l.getRoomNumber(), l.getTopic(),
+                        l.getAttendance()});
             }
-        } catch (SQLException ex) {
+        } catch (DataException ex) {
             error(ex.getMessage());
         }
     }

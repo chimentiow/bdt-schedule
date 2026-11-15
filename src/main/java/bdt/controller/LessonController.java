@@ -2,10 +2,12 @@ package bdt.controller;
 
 import bdt.dao.LessonStore;
 import bdt.model.Lesson;
+import bdt.model.LessonSummary;
 import bdt.model.Schedule;
 import bdt.model.ScheduleEntry;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 /** Контролер прецеденту «Облік фактичного заняття». */
@@ -69,6 +71,11 @@ public class LessonController {
         int present = lesson.countPresent();
         lesson = null;
         return present;
+    }
+
+    /** Історія проведених занять секції для журналу. */
+    public List<LessonSummary> getHistory(int sectionId) {
+        return store.findHistory(sectionId);
     }
 
     public Lesson getLesson() { return lesson; }

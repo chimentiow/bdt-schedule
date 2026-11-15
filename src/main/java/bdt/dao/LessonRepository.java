@@ -3,6 +3,7 @@ package bdt.dao;
 import bdt.db.Database;
 import bdt.model.AttendanceMark;
 import bdt.model.Lesson;
+import bdt.model.LessonSummary;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -11,7 +12,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Репозиторій фактичних занять: заняття і відвідування зберігаються однією транзакцією. */
@@ -96,5 +99,28 @@ public class LessonRepository implements LessonStore {
         } catch (SQLException ex) {
             throw new DataException("Не вдалося зберегти заняття", ex);
         }
+    }
+
+    @Override
+    public List<LessonSummary> findHistory(int sectionId) {
+        String sql = "SELECT ls.lesson_date, ls.start_time, r.room_number, ls.topic, "
+                + "SUM(CASE WHEN a.present THEN 1 ELSE 0 END) || ' з ' || COUNT(a.participant_id) "
+                + "FROM lesson ls JOIN room r ON r.room_id = ls.room_id "
+                + "LEFT JOIN attendance a ON a.lesson_id = ls.lesson_id WHERE ls.section_id = ? "
+                + "GROUP BY ls.lesson_id, ls.lesson_date, ls.start_time, r.room_number, ls.topic "
+                + "ORDER BY ls.lesson_date DESC, ls.start_time DESC";
+        List<LessonSummary> history = new ArrayList<>();
+        try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, sectionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    history.add(new LessonSummary(rs.getDate(1).toLocalDate(), rs.getTime(2).toLocalTime(),
+                            rs.getString(3), rs.getString(4), rs.getString(5)));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataException("Помилка читання історії занять", e);
+        }
+        return history;
     }
 }

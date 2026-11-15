@@ -1,19 +1,20 @@
 package bdt.ui;
 
 import bdt.controller.LessonController;
+import bdt.controller.PaymentController;
 import bdt.controller.ScheduleController;
+import bdt.controller.ScheduleException;
+import bdt.dao.DataException;
+import bdt.dao.EnrollmentCatalog;
 import bdt.dao.LessonRepository;
 import bdt.dao.RoomCatalog;
 import bdt.dao.ScheduleRepository;
 import bdt.dao.SectionCatalog;
+import bdt.dao.SummaryCatalog;
 import bdt.db.Database;
-import bdt.model.FeePolicy;
+import bdt.model.FeeQuote;
 import bdt.ui.CrudPanel.Field;
 import java.awt.BorderLayout;
-import java.math.BigDecimal;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -33,6 +34,8 @@ public class MainWindow extends JFrame {
 
     private final Database db;
     private final SectionCatalog sectionCatalog;
+    private final SummaryCatalog summary;
+    private final PaymentController paymentController;
     private final JTabbedPane tabs = new JTabbedPane(JTabbedPane.LEFT);
     private final JLabel statusBar = new JLabel(" ");
     private final SchedulePanel schedulePanel;
@@ -44,6 +47,8 @@ public class MainWindow extends JFrame {
         super("ІС «Будинок дитячої творчості» – облік секцій і розклад занять");
         this.db = db;
         this.sectionCatalog = new SectionCatalog(db);
+        this.summary = new SummaryCatalog(db);
+        this.paymentController = new PaymentController(new EnrollmentCatalog(db));
         ScheduleController scheduleController =
                 new ScheduleController(sectionCatalog, new RoomCatalog(db), new ScheduleRepository(db));
         LessonController lessonController =
@@ -166,23 +171,11 @@ public class MainWindow extends JFrame {
     /** Розрахунок суми оплати за стратегією FeePolicy залежно від пільги учасника. */
     public void calculateFee(CrudPanel panel) {
         try {
-            int enrollmentId = (Integer) panel.getValue("enrollment_id");
-            String sql = "SELECT s.monthly_fee, p.benefit FROM enrollment e "
-                    + "JOIN section s ON s.section_id = e.section_id "
-                    + "JOIN participant p ON p.participant_id = e.participant_id WHERE e.enrollment_id = ?";
-            try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
-                ps.setInt(1, enrollmentId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    rs.next();
-                    BigDecimal fee = rs.getBigDecimal(1);
-                    FeePolicy policy = FeePolicy.forBenefit(rs.getString(2));
-                    BigDecimal amount = policy.apply(fee);
-                    panel.setValue("amount", amount);
-                    panel.showOk("<html>Тариф: " + fee + " грн; пільга: " + policy.getName()
-                            + "<br>До сплати: " + amount + " грн</html>");
-                }
-            }
-        } catch (IllegalArgumentException | SQLException ex) {
+            FeeQuote quote = paymentController.calculateFee((Integer) panel.getValue("enrollment_id"));
+            panel.setValue("amount", quote.getAmount());
+            panel.showOk("<html>Тариф: " + quote.getMonthlyFee() + " грн; пільга: " + quote.getPolicyName()
+                    + "<br>До сплати: " + quote.getAmount() + " грн</html>");
+        } catch (IllegalArgumentException | ScheduleException | DataException ex) {
             panel.showError(ex.getMessage());
         }
     }
@@ -193,14 +186,13 @@ public class MainWindow extends JFrame {
     }
 
     public void refreshStatus() {
-        String sql = "SELECT (SELECT COUNT(*) FROM section), (SELECT COUNT(*) FROM participant), "
-                + "(SELECT COUNT(*) FROM schedule_entry), (SELECT COUNT(*) FROM lesson)";
-        try (PreparedStatement ps = db.getConnection().prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            rs.next();
-            statusBar.setText("Секцій: " + rs.getInt(1) + "   |   Учасників: " + rs.getInt(2)
-                    + "   |   Занять у розкладі на тиждень: " + rs.getInt(3) + "   |   Проведено занять: " + rs.getInt(4));
-        } catch (SQLException e) {
-            statusBar.setText("Помилка БД: " + e.getMessage());
+        try {
+            statusBar.setText("Секцій: " + summary.countSections()
+                    + "   |   Учасників: " + summary.countParticipants()
+                    + "   |   Занять у розкладі на тиждень: " + summary.countScheduleEntries()
+                    + "   |   Проведено занять: " + summary.countLessons());
+        } catch (DataException e) {
+            statusBar.setText("Помилка БД: " + e.getCause().getMessage());
         }
     }
 

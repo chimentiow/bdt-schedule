@@ -1,7 +1,9 @@
 package bdt.dao;
 
 import bdt.model.Lesson;
+import bdt.model.LessonSummary;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 /** Сховище фактичних занять і відвідувань. */
@@ -12,4 +14,7 @@ public interface LessonStore {
     Map<Integer, String> findActiveParticipants(int sectionId, LocalDate date);
 
     int save(Lesson lesson);
+
+    /** Проведені заняття секції, від найновіших до найдавніших. */
+    List<LessonSummary> findHistory(int sectionId);
 }
