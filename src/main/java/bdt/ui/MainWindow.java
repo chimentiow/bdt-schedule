@@ -13,7 +13,7 @@ import bdt.dao.SectionCatalog;
 import bdt.dao.SummaryCatalog;
 import bdt.db.Database;
 import bdt.model.FeeQuote;
-import bdt.ui.CrudPanel.Field;
+import bdt.ui.form.FormField;
 import java.awt.BorderLayout;
 import java.util.List;
 import javax.swing.BorderFactory;
@@ -86,13 +86,13 @@ public class MainWindow extends JFrame {
                 + "AS \"Учасн.\", s.max_participants AS \"Макс.\", s.monthly_fee AS \"Оплата, грн\" "
                 + "FROM section s JOIN leader l ON l.leader_id = s.leader_id ORDER BY s.name";
         return track(new CrudPanel(db, "Секція", "section", "section_id", list, List.of(
-                Field.text("Назва", "name"),
-                Field.choice("Напрям", "direction", "Хореографічна|Музична|Художня|Технічна|Спортивна"),
-                Field.lookup("Керівник", "leader_id", LEADERS),
-                Field.integer("Вік від", "age_min"),
-                Field.integer("Вік до", "age_max"),
-                Field.integer("Макс. учасників", "max_participants"),
-                Field.decimal("Оплата за місяць, грн", "monthly_fee"))));
+                FormField.text("Назва", "name"),
+                FormField.choice("Напрям", "direction", "Хореографічна", "Музична", "Художня", "Технічна", "Спортивна"),
+                FormField.lookup("Керівник", "leader_id", LEADERS),
+                FormField.integer("Вік від", "age_min"),
+                FormField.integer("Вік до", "age_max"),
+                FormField.integer("Макс. учасників", "max_participants"),
+                FormField.decimal("Оплата за місяць, грн", "monthly_fee"))));
     }
 
     private CrudPanel leadersPanel() {
@@ -100,9 +100,9 @@ public class MainWindow extends JFrame {
                 + "middle_name AS \"По батькові\", phone AS \"Телефон\", specialization AS \"Спеціалізація\", "
                 + "hire_date AS \"Прийнятий\" FROM leader ORDER BY last_name";
         return track(new CrudPanel(db, "Керівник секції", "leader", "leader_id", list, List.of(
-                Field.text("Прізвище", "last_name"), Field.text("Ім’я", "first_name"),
-                Field.optText("По батькові", "middle_name"), Field.text("Телефон", "phone"),
-                Field.text("Спеціалізація", "specialization"), Field.date("Дата прийому", "hire_date"))));
+                FormField.text("Прізвище", "last_name"), FormField.text("Ім’я", "first_name"),
+                FormField.optText("По батькові", "middle_name"), FormField.text("Телефон", "phone"),
+                FormField.text("Спеціалізація", "specialization"), FormField.date("Дата прийому", "hire_date"))));
     }
 
     private CrudPanel participantsPanel() {
@@ -110,10 +110,10 @@ public class MainWindow extends JFrame {
                 + "birth_date AS \"Дата народж.\", parent_name AS \"Батьки\", parent_phone AS \"Телефон\", "
                 + "benefit AS \"Пільга\" FROM participant ORDER BY last_name, first_name";
         return track(new CrudPanel(db, "Учасник", "participant", "participant_id", list, List.of(
-                Field.text("Прізвище", "last_name"), Field.text("Ім’я", "first_name"),
-                Field.date("Дата народження", "birth_date"), Field.text("Батьки (ПІБ)", "parent_name"),
-                Field.text("Телефон батьків", "parent_phone"),
-                Field.choice("Пільга", "benefit", "Немає|Багатодітна|Пільгова"))));
+                FormField.text("Прізвище", "last_name"), FormField.text("Ім’я", "first_name"),
+                FormField.date("Дата народження", "birth_date"), FormField.text("Батьки (ПІБ)", "parent_name"),
+                FormField.text("Телефон батьків", "parent_phone"),
+                FormField.choice("Пільга", "benefit", "Немає", "Багатодітна", "Пільгова"))));
     }
 
     private CrudPanel enrollmentPanel() {
@@ -122,24 +122,24 @@ public class MainWindow extends JFrame {
                 + "FROM enrollment e JOIN participant p ON p.participant_id = e.participant_id "
                 + "JOIN section s ON s.section_id = e.section_id ORDER BY s.name, 2";
         return track(new CrudPanel(db, "Запис учасника до секції", "enrollment", "enrollment_id", list, List.of(
-                Field.lookup("Учасник", "participant_id", PARTICIPANTS), Field.lookup("Секція", "section_id", SECTIONS),
-                Field.date("Дата запису", "enroll_date"), Field.choice("Статус", "status", "Активний|Вибув"))));
+                FormField.lookup("Учасник", "participant_id", PARTICIPANTS), FormField.lookup("Секція", "section_id", SECTIONS),
+                FormField.date("Дата запису", "enroll_date"), FormField.choice("Статус", "status", "Активний", "Вибув"))));
     }
 
     private CrudPanel roomsPanel() {
         String list = "SELECT room_id AS \"ID\", room_number AS \"Номер\", room_type AS \"Тип\", "
                 + "capacity AS \"Місткість\" FROM room ORDER BY room_number";
         return track(new CrudPanel(db, "Приміщення", "room", "room_id", list, List.of(
-                Field.text("Номер", "room_number"), Field.text("Тип", "room_type"),
-                Field.integer("Місткість", "capacity"))));
+                FormField.text("Номер", "room_number"), FormField.text("Тип", "room_type"),
+                FormField.integer("Місткість", "capacity"))));
     }
 
     private CrudPanel eventsPanel() {
         String list = "SELECT event_id AS \"ID\", title AS \"Назва\", event_type AS \"Тип\", "
                 + "event_date AS \"Дата\", place AS \"Місце\" FROM event ORDER BY event_date";
         return track(new CrudPanel(db, "Захід", "event", "event_id", list, List.of(
-                Field.text("Назва", "title"), Field.choice("Тип", "event_type", "Концерт|Виставка|Конкурс|Фестиваль|Змагання"),
-                Field.date("Дата", "event_date"), Field.text("Місце", "place"), Field.optText("Опис", "description"))));
+                FormField.text("Назва", "title"), FormField.choice("Тип", "event_type", "Концерт", "Виставка", "Конкурс", "Фестиваль", "Змагання"),
+                FormField.date("Дата", "event_date"), FormField.text("Місце", "place"), FormField.optText("Опис", "description"))));
     }
 
     private CrudPanel eventSectionPanel() {
@@ -149,8 +149,8 @@ public class MainWindow extends JFrame {
                 + "ORDER BY ev.event_date, s.name";
         return track(new CrudPanel(db, "Участь секції у заході", "event_section",
                 "event_id * 1000 + section_id", list, List.of(
-                Field.lookup("Захід", "event_id", EVENTS), Field.lookup("Секція", "section_id", SECTIONS),
-                Field.text("Виступ / експонат", "performance"), Field.optText("Результат", "result"))));
+                FormField.lookup("Захід", "event_id", EVENTS), FormField.lookup("Секція", "section_id", SECTIONS),
+                FormField.text("Виступ / експонат", "performance"), FormField.optText("Результат", "result"))));
     }
 
     private CrudPanel paymentsPanel() {
@@ -161,9 +161,9 @@ public class MainWindow extends JFrame {
                 + "JOIN participant p ON p.participant_id = e.participant_id "
                 + "JOIN section s ON s.section_id = e.section_id ORDER BY pm.pay_date DESC, pm.payment_id DESC";
         paymentsPanel = track(new CrudPanel(db, "Оплата занять", "payment", "payment_id", list, List.of(
-                Field.lookup("Учасник – секція", "enrollment_id", ENROLLMENTS),
-                Field.text("Місяць (РРРР-ММ)", "period"), Field.decimal("Сума, грн", "amount"),
-                Field.date("Дата оплати", "pay_date"), Field.choice("Спосіб", "method", "Готівка|Картка"))));
+                FormField.lookup("Учасник – секція", "enrollment_id", ENROLLMENTS),
+                FormField.text("Місяць (РРРР-ММ)", "period"), FormField.decimal("Сума, грн", "amount"),
+                FormField.date("Дата оплати", "pay_date"), FormField.choice("Спосіб", "method", "Готівка", "Картка"))));
         paymentsPanel.addAction("Розрахувати суму", this::calculateFee);
         return paymentsPanel;
     }
