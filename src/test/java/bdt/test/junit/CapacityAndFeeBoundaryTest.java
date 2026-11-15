@@ -10,6 +10,7 @@ import bdt.controller.ScheduleController;
 import bdt.controller.ScheduleException;
 import bdt.dao.SectionSource;
 import bdt.model.FeePolicy;
+import bdt.model.Lesson;
 import bdt.model.Room;
 import bdt.model.Schedule;
 import bdt.model.ScheduleEntry;
@@ -138,8 +139,8 @@ public class CapacityAndFeeBoundaryTest {
 
     @Test
     public void bv35_lessonToday_isOpened() {
-        assertEquals(TestData.TODAY,
-                controllerForWeek().openLesson(TestData.GUITAR.getId(), TestData.TODAY).getDate());
+        Lesson lesson = controllerForWeek().openLesson(TestData.GUITAR.getId(), TestData.TODAY);
+        assertEquals(TestData.TODAY, lesson.getDate());
     }
 
     @Test
