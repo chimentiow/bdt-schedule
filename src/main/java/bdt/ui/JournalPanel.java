@@ -8,7 +8,6 @@ import bdt.model.Lesson;
 import bdt.model.LessonSummary;
 import bdt.model.Section;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.time.LocalDate;
@@ -32,7 +31,7 @@ public class JournalPanel extends JPanel {
     private final JTextField date = new JTextField(LocalDate.now().toString(), 10);
     private final JTextField topic = new JTextField(30);
     private final JLabel lessonInfo = new JLabel(" ");
-    private final JLabel status = new JLabel(" ");
+    private final StatusLabel status = new StatusLabel();
     private final DefaultTableModel marks = new DefaultTableModel(new Object[]{"Присутній", "Учасник", "ID"}, 0) {
         @Override
         public Class<?> getColumnClass(int c) { return c == 0 ? Boolean.class : Object.class; }
@@ -114,11 +113,11 @@ public class JournalPanel extends JPanel {
                     + l.getEntry().getRoom().getNumber() + ", керівник "
                     + l.getEntry().getSection().getLeader().getShortName()
                     + ".  Учасників у списку: " + l.getMarks().size());
-            ok("Заняття відкрито. Відмітьте відсутніх і вкажіть тему.");
+            status.showOk("Заняття відкрито. Відмітьте відсутніх і вкажіть тему.");
         } catch (DateTimeParseException ex) {
-            error("Дата вводиться у форматі РРРР-ММ-ДД.");
+            status.showError("Дата вводиться у форматі РРРР-ММ-ДД.");
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -127,14 +126,14 @@ public class JournalPanel extends JPanel {
             controller.setTopic(topic.getText());
             int total = marks.getRowCount();
             int present = controller.closeLesson();
-            ok("Заняття збережено. Присутні: " + present + " з " + total + ".");
+            status.showOk("Заняття збережено. Присутні: " + present + " з " + total + ".");
             marks.setRowCount(0);
             topic.setText("");
             lessonInfo.setText(" ");
             loadHistory();
             main.refreshStatus();
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -148,7 +147,7 @@ public class JournalPanel extends JPanel {
                         l.getAttendance()});
             }
         } catch (DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -160,7 +159,4 @@ public class JournalPanel extends JPanel {
     }
 
     public void demoAbsent(int row) { marks.setValueAt(Boolean.FALSE, row, 0); }
-
-    private void error(String m) { status.setForeground(new Color(180, 0, 0)); status.setText(m); }
-    private void ok(String m) { status.setForeground(new Color(0, 120, 0)); status.setText(m); }
 }

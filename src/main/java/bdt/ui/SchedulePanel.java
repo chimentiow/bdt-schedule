@@ -5,7 +5,6 @@ import bdt.controller.ScheduleException;
 import bdt.model.ScheduleEntry;
 import bdt.model.TimeSlot;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Window;
 import javax.swing.JButton;
@@ -30,7 +29,7 @@ public class SchedulePanel extends JPanel {
     private final JTable table = new JTable(model);
     private final JComboBox<String> dayFilter = new JComboBox<>(
             new String[]{"Усі дні", "Понеділок", "Вівторок", "Середа", "Четвер", "П’ятниця", "Субота", "Неділя"});
-    private final JLabel status = new JLabel(" ");
+    private final StatusLabel status = new StatusLabel();
 
     public SchedulePanel(ScheduleController controller, MainWindow main) {
         super(new BorderLayout(6, 6));
@@ -66,8 +65,7 @@ public class SchedulePanel extends JPanel {
                     e.getSection().getName(), e.getSection().getLeader().getShortName(),
                     e.getRoom().getNumber() + " – " + e.getRoom().getType()});
         }
-        status.setForeground(Color.DARK_GRAY);
-        status.setText("Записів у розкладі: " + model.getRowCount());
+        status.showInfo("Записів у розкладі: " + model.getRowCount());
     }
 
     public AddEntryDialog openAddDialog() {
@@ -75,8 +73,7 @@ public class SchedulePanel extends JPanel {
         AddEntryDialog d = new AddEntryDialog(w, controller, main.getSectionCatalog().findAll());
         d.setOnSaved(saved -> {
             reload();
-            status.setForeground(new Color(0, 120, 0));
-            status.setText("Додано: " + saved.describe());
+            status.showOk("Додано: " + saved.describe());
             main.refreshStatus();
         });
         return d;
@@ -87,8 +84,7 @@ public class SchedulePanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) {
-            status.setForeground(new Color(180, 0, 0));
-            status.setText("Оберіть запис розкладу.");
+            status.showError("Оберіть запис розкладу.");
             return;
         }
         int id = (Integer) model.getValueAt(row, 0);
@@ -98,8 +94,7 @@ public class SchedulePanel extends JPanel {
                 controller.deleteEntry(id);
                 reload();
             } catch (ScheduleException | bdt.dao.DataException ex) {
-                status.setForeground(new Color(180, 0, 0));
-                status.setText(ex.getMessage());
+                status.showError(ex.getMessage());
             }
         }
     }

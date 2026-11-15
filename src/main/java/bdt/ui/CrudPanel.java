@@ -2,7 +2,6 @@ package bdt.ui;
 
 import bdt.db.Database;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -72,7 +71,7 @@ public class CrudPanel extends JPanel {
         public boolean isCellEditable(int r, int c) { return false; }
     };
     private final JTable table = new JTable(model);
-    private final JLabel status = new JLabel(" ");
+    private final StatusLabel status = new StatusLabel();
     private final JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT));
     private Integer editingId;
     private Runnable onChange = () -> { };
@@ -218,7 +217,7 @@ public class CrudPanel extends JPanel {
                 for (int i = 0; i < fields.size(); i++) setValue(fields.get(i), rs.getObject(i + 1));
             }
             editingId = id;
-            showInfo("Редагування запису № " + id);
+            status.showInfo("Редагування запису № " + id);
         } catch (SQLException e) {
             showError(e.getMessage());
         }
@@ -340,7 +339,7 @@ public class CrudPanel extends JPanel {
             if (en.getValue() instanceof JTextField tf) tf.setText("");
             else ((JComboBox<?>) en.getValue()).setSelectedIndex(((JComboBox<?>) en.getValue()).getItemCount() > 0 ? 0 : -1);
         }
-        showInfo("Новий запис");
+        status.showInfo("Новий запис");
     }
 
     public void selectRow(int index) {
@@ -359,9 +358,8 @@ public class CrudPanel extends JPanel {
     @SuppressWarnings("unchecked")
     private static JComboBox<Item> castCombo(JComponent c) { return (JComboBox<Item>) c; }
 
-    public void showError(String m) { status.setForeground(new Color(180, 0, 0)); status.setText(m); }
-    public void showOk(String m) { status.setForeground(new Color(0, 120, 0)); status.setText(m); }
-    private void showInfo(String m) { status.setForeground(Color.DARK_GRAY); status.setText(m); }
+    public void showError(String message) { status.showError(message); }
+    public void showOk(String message) { status.showOk(message); }
 
     public Database getDb() { return db; }
     public int getRowCount() { return model.getRowCount(); }

@@ -7,7 +7,6 @@ import bdt.model.Room;
 import bdt.model.ScheduleEntry;
 import bdt.model.Section;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -45,7 +44,7 @@ public class AddEntryDialog extends JDialog {
     private final JTextField end = new JTextField("16:30", 6);
     private final DefaultListModel<Room> roomsModel = new DefaultListModel<>();
     private final JList<Room> rooms = new JList<>(roomsModel);
-    private final JLabel status = new JLabel(" ");
+    private final StatusLabel status = new StatusLabel();
     private final JButton save = new JButton("Зберегти в розкладі");
     private Consumer<ScheduleEntry> onSaved = e -> { };
 
@@ -128,9 +127,9 @@ public class AddEntryDialog extends JDialog {
                     + controller.getParticipants() + " (макс. " + s.getMaxParticipants() + ")");
             roomsModel.clear();
             save.setEnabled(false);
-            info("Вкажіть день тижня та час заняття.");
+            status.showInfo("Вкажіть день тижня та час заняття.");
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -140,11 +139,11 @@ public class AddEntryDialog extends JDialog {
                     LocalTime.parse(start.getText().trim()), LocalTime.parse(end.getText().trim())); // операція 3
             roomsModel.clear();
             save.setEnabled(false);
-            ok("Керівник вільний у цей час. Підберіть приміщення.");
+            status.showOk("Керівник вільний у цей час. Підберіть приміщення.");
         } catch (DateTimeParseException ex) {
-            error("Час вводиться у форматі ГГ:ХХ, наприклад 15:30.");
+            status.showError("Час вводиться у форматі ГГ:ХХ, наприклад 15:30.");
         } catch (ScheduleException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -153,10 +152,10 @@ public class AddEntryDialog extends JDialog {
             List<Room> free = controller.getFreeRooms();          // системна операція 4
             roomsModel.clear();
             free.forEach(roomsModel::addElement);
-            if (free.isEmpty()) error("Немає вільних приміщень потрібної місткості. Змініть час заняття.");
-            else info("Знайдено вільних приміщень: " + free.size() + ". Оберіть приміщення.");
+            if (free.isEmpty()) status.showError("Немає вільних приміщень потрібної місткості. Змініть час заняття.");
+            else status.showInfo("Знайдено вільних приміщень: " + free.size() + ". Оберіть приміщення.");
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -164,10 +163,10 @@ public class AddEntryDialog extends JDialog {
         try {
             controller.selectRoom(rooms.getSelectedValue().getId()); // системна операція 5
             save.setEnabled(true);
-            ok("Приміщення " + rooms.getSelectedValue().getNumber() + " обрано. Підтвердіть збереження.");
+            status.showOk("Приміщення " + rooms.getSelectedValue().getNumber() + " обрано. Підтвердіть збереження.");
         } catch (ScheduleException | DataException ex) {
             save.setEnabled(false);
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -177,7 +176,7 @@ public class AddEntryDialog extends JDialog {
             onSaved.accept(saved);
             dispose();
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -194,8 +193,4 @@ public class AddEntryDialog extends JDialog {
     public void demoFindRooms() { findRooms(); }
     public void demoRoom(int index) { rooms.setSelectedIndex(index); }
     public void demoSave() { saveEntry(); }
-
-    private void error(String m) { status.setForeground(new Color(180, 0, 0)); status.setText(m); }
-    private void ok(String m) { status.setForeground(new Color(0, 120, 0)); status.setText(m); }
-    private void info(String m) { status.setForeground(Color.DARK_GRAY); status.setText(m); }
 }

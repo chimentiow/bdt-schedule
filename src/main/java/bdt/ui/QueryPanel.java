@@ -2,7 +2,6 @@ package bdt.ui;
 
 import bdt.db.Database;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.sql.PreparedStatement;
@@ -35,7 +34,7 @@ public class QueryPanel extends JPanel {
         @Override
         public boolean isCellEditable(int r, int c) { return false; }
     };
-    private final JLabel status = new JLabel(" ");
+    private final StatusLabel status = new StatusLabel();
 
     public QueryPanel(Database db, List<QueryDef> queries) {
         super(new BorderLayout(6, 6));
@@ -93,7 +92,7 @@ public class QueryPanel extends JPanel {
         sqlText.setText(q.sql());
         sqlText.setCaretPosition(0);
         result.setDataVector(new Object[0][], new Object[0]);
-        status.setText(" ");
+        status.clear();
     }
 
     public void execute() {
@@ -115,11 +114,9 @@ public class QueryPanel extends JPanel {
                     result.addRow(row);
                 }
             }
-            status.setForeground(new Color(0, 120, 0));
-            status.setText("Знайдено рядків: " + result.getRowCount());
+            status.showOk("Знайдено рядків: " + result.getRowCount());
         } catch (SQLException ex) {
-            status.setForeground(new Color(180, 0, 0));
-            status.setText("Помилка: " + ex.getMessage().split("\n")[0]);
+            status.showError("Помилка: " + ex.getMessage().split("\n")[0]);
         }
     }
 
