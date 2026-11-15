@@ -16,6 +16,8 @@ public final class RunTests {
     private static final Class<?>[] ALL = {
         LessonDecisionTableTest.class,
         AddEntryDecisionTableTest.class,
+        SetTimeCauseEffectTest.class,
+        SetTimeResetsRoomTest.class,
     };
 
     private RunTests() {
