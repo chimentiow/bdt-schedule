@@ -32,8 +32,8 @@ public class ScheduleRepository implements ScheduleStore {
         try (PreparedStatement ps = db.getConnection().prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                Section section = SectionCatalog.map(rs);
-                Room room = RoomCatalog.map(rs);
+                Section section = SectionCatalog.mapSection(rs);
+                Room room = RoomCatalog.mapRoom(rs);
                 TimeSlot slot = new TimeSlot(rs.getInt("day_of_week"),
                         rs.getTime("start_time").toLocalTime(), rs.getTime("end_time").toLocalTime());
                 schedule.add(new ScheduleEntry(rs.getInt("entry_id"), section, room, slot));

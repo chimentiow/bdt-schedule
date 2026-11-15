@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -40,16 +41,26 @@ public class Database {
 
     /** Створює таблиці та завантажує тестові дані, якщо база порожня. */
     public void initialize() throws SQLException, IOException {
-        try (Statement st = getConnection().createStatement();
-             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES "
-                     + "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = 'SECTION'")) {
-            rs.next();
-            if (rs.getInt(1) > 0) {
-                return;
-            }
+        int tables = queryInt("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES "
+                + "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = 'SECTION'");
+        if (tables > 0) {
+            return;
         }
         runScript("/schema.sql");
         runScript("/data.sql");
+    }
+
+    /** Виконує запит, який повертає одне ціле число (наприклад, COUNT(*)). */
+    public int queryInt(String sql, Object... params) throws SQLException {
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
     }
 
     public void runScript(String resource) throws SQLException, IOException {

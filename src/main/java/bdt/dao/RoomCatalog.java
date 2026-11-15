@@ -23,7 +23,7 @@ public class RoomCatalog implements RoomSource {
         try (PreparedStatement ps = db.getConnection().prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(map(rs));
+                list.add(mapRoom(rs));
             }
         } catch (SQLException e) {
             throw new DataException("Помилка читання приміщень", e);
@@ -37,14 +37,14 @@ public class RoomCatalog implements RoomSource {
         try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
             ps.setInt(1, roomId);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? map(rs) : null;
+                return rs.next() ? mapRoom(rs) : null;
             }
         } catch (SQLException e) {
             throw new DataException("Помилка читання приміщення", e);
         }
     }
 
-    static Room map(ResultSet rs) throws SQLException {
+    static Room mapRoom(ResultSet rs) throws SQLException {
         return new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getString("room_type"),
                 rs.getInt("capacity"));
     }

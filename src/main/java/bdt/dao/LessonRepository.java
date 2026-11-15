@@ -25,13 +25,8 @@ public class LessonRepository implements LessonStore {
     @Override
     public boolean exists(int sectionId, LocalDate date) {
         String sql = "SELECT COUNT(*) FROM lesson WHERE section_id = ? AND lesson_date = ?";
-        try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
-            ps.setInt(1, sectionId);
-            ps.setDate(2, Date.valueOf(date));
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getInt(1) > 0;
-            }
+        try {
+            return db.queryInt(sql, sectionId, Date.valueOf(date)) > 0;
         } catch (SQLException e) {
             throw new DataException("Помилка перевірки заняття", e);
         }
