@@ -43,7 +43,7 @@ java -jar bdt.jar # або подвійне клацання на run.command / 
 ```
 ./test.sh                    # усі тести
 ./test.sh drivers            # драйвери курсового проекту (39 тестових варіантів)
-./test.sh junit              # тести JUnit (203 тести)
+./test.sh junit              # тести JUnit (205 тестів)
 ./test.sh junit НазваКласу     # окремий клас тестів, наприклад SetTimeCauseEffectTest
 ```
 
@@ -55,6 +55,7 @@ java -jar bdt.jar # або подвійне клацання на run.command / 
 | Функціональні діаграми | `SetTimeCauseEffectTest`, `SetTimeResetsRoomTest` | 15 |
 | Класи еквівалентності | `TimeSlotEquivalenceTest`, `FeeEquivalenceTest`, `LessonInputEquivalenceTest`, `FormFieldEquivalenceTest`, `DatabaseConstraintsEquivalenceTest` | 77 |
 | Аналіз граничних значень | `TimeSlotBoundaryTest`, `OverlapBoundaryTest`, `CapacityAndFeeBoundaryTest`, `DatabaseBoundaryTest`, `TopicLengthBoundaryTest` | 87 |
+| Надійність збереження (відкочування транзакції) | `LessonSaveRollbackTest` | 2 |
 
 Контролери тестуються із заглушками сховищ (`TestData`), обмеження бази даних – на базі H2
 в оперативній пам’яті (`TestDatabase`). Бібліотеки JUnit 4.13.2 і Hamcrest 1.3 лежать у `lib`.

@@ -28,6 +28,7 @@ public final class RunTests {
         CapacityAndFeeBoundaryTest.class,
         DatabaseBoundaryTest.class,
         TopicLengthBoundaryTest.class,
+        LessonSaveRollbackTest.class,
     };
 
     private RunTests() {
