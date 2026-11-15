@@ -90,8 +90,8 @@ final class CrudSpecs {
 
     static CrudSpec eventSections() {
         String list = "SELECT es.event_id * 1000 + es.section_id AS \"ID\", ev.title AS \"Захід\", "
-                + "s.name AS \"Секція\", es.performance AS \"Виступ / експонат\", es.result AS \"Результат\" FROM event_section es "
-                + "JOIN event ev ON ev.event_id = es.event_id JOIN section s ON s.section_id = es.section_id "
+                + "s.name AS \"Секція\", es.performance AS \"Виступ / експонат\", es.result AS \"Результат\" "
+                + "FROM event_section es JOIN event ev ON ev.event_id = es.event_id JOIN section s ON s.section_id = es.section_id "
                 + "ORDER BY ev.event_date, s.name";
         return new CrudSpec("Участь секції у заході", "event_section",
                 "event_id * 1000 + section_id", list, List.of(

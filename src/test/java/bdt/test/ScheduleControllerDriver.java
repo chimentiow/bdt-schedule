@@ -43,7 +43,7 @@ public final class ScheduleControllerDriver {
         c.selectRoom(3);
         ScheduleEntry saved = c.saveEntry();
         TestLog.check("SC-11", "saveEntry: id від заглушки сховища", 100, saved.getId());
-        TestLog.check("SC-12", "Заглушка отримала 1 запис", 1, store.inserted.size());
+        TestLog.check("SC-12", "Заглушка отримала 1 запис", 1, store.getInsertedCount());
         TestLog.check("SC-13", "Запис додано до розкладу в пам’яті", 3, c.getSchedule().size());
         c.newEntry();
         c.selectSection(1);
