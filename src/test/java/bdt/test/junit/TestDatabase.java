@@ -34,8 +34,7 @@ final class TestDatabase {
     static final String UNIQUE = "відхилено: UNIQUE";
     static final String FOREIGN_KEY = "відхилено: FOREIGN KEY";
     static final String NOT_NULL = "відхилено: NOT NULL";
-    static final String TOO_LONG = "відхилено: довжина значення";
-    static final String OUT_OF_RANGE = "відхилено: розрядність числа";
+    static final String TOO_LONG = "відхилено: значення не вміщується у стовпець";
 
     /** Виконує команду SQL і повертає, чи прийняла її СУБД, а якщо ні – яке обмеження спрацювало. */
     String execute(String sql) {
@@ -49,7 +48,6 @@ final class TestDatabase {
                 case 23506: return FOREIGN_KEY;
                 case 23502: return NOT_NULL;
                 case 22001: return TOO_LONG;
-                case 22003: return OUT_OF_RANGE;
                 default: return "помилка " + rejected.getErrorCode() + ": " + rejected.getMessage();
             }
         }

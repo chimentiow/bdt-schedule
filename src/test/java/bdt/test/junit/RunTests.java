@@ -23,6 +23,11 @@ public final class RunTests {
         LessonInputEquivalenceTest.class,
         FormFieldEquivalenceTest.class,
         DatabaseConstraintsEquivalenceTest.class,
+        TimeSlotBoundaryTest.class,
+        OverlapBoundaryTest.class,
+        CapacityAndFeeBoundaryTest.class,
+        DatabaseBoundaryTest.class,
+        TopicLengthBoundaryTest.class,
     };
 
     private RunTests() {
