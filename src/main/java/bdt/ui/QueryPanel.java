@@ -6,7 +6,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,15 +103,7 @@ public class QueryPanel extends JPanel {
                 ps.setString(i + 1, paramFields.get(i % paramFields.size()).getText().trim());
             }
             try (ResultSet rs = ps.executeQuery()) {
-                ResultSetMetaData md = rs.getMetaData();
-                Object[] cols = new Object[md.getColumnCount()];
-                for (int i = 0; i < cols.length; i++) cols[i] = md.getColumnLabel(i + 1);
-                result.setDataVector(new Object[0][], cols);
-                while (rs.next()) {
-                    Object[] row = new Object[cols.length];
-                    for (int i = 0; i < cols.length; i++) row[i] = rs.getObject(i + 1);
-                    result.addRow(row);
-                }
+                ResultSetTable.fill(result, rs);
             }
             status.showOk("Знайдено рядків: " + result.getRowCount());
         } catch (SQLException ex) {
