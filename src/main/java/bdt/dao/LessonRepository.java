@@ -4,6 +4,7 @@ import bdt.db.Database;
 import bdt.model.AttendanceMark;
 import bdt.model.Lesson;
 import bdt.model.LessonSummary;
+import bdt.model.ScheduleEntry;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -56,40 +57,17 @@ public class LessonRepository implements LessonStore {
         return result;
     }
 
+    /** Заняття та відмітки відвідування зберігаються однією транзакцією. */
     @Override
     public int save(Lesson lesson) {
-        String insLesson = "INSERT INTO lesson (section_id, entry_id, room_id, leader_id, lesson_date, "
-                + "start_time, end_time, topic) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        String insMark = "INSERT INTO attendance (lesson_id, participant_id, present) VALUES (?, ?, ?)";
         try {
             Connection c = db.getConnection();
             c.setAutoCommit(false);
-            try (PreparedStatement ps = c.prepareStatement(insLesson, Statement.RETURN_GENERATED_KEYS);
-                 PreparedStatement pm = c.prepareStatement(insMark)) {
-                var e = lesson.getEntry();
-                ps.setInt(1, e.getSection().getId());
-                ps.setInt(2, e.getId());
-                ps.setInt(3, e.getRoom().getId());
-                ps.setInt(4, e.getLeaderId());
-                ps.setDate(5, Date.valueOf(lesson.getDate()));
-                ps.setTime(6, Time.valueOf(e.getSlot().getStart()));
-                ps.setTime(7, Time.valueOf(e.getSlot().getEnd()));
-                ps.setString(8, lesson.getTopic());
-                ps.executeUpdate();
-                int id;
-                try (ResultSet keys = ps.getGeneratedKeys()) {
-                    keys.next();
-                    id = keys.getInt(1);
-                }
-                for (AttendanceMark m : lesson.getMarks()) {
-                    pm.setInt(1, id);
-                    pm.setInt(2, m.getParticipantId());
-                    pm.setBoolean(3, m.isPresent());
-                    pm.addBatch();
-                }
-                pm.executeBatch();
+            try {
+                int lessonId = insertLesson(c, lesson);
+                insertAttendance(c, lessonId, lesson.getMarks());
                 c.commit();
-                return id;
+                return lessonId;
             } catch (SQLException ex) {
                 c.rollback();
                 throw ex;
@@ -98,6 +76,41 @@ public class LessonRepository implements LessonStore {
             }
         } catch (SQLException ex) {
             throw new DataException("Не вдалося зберегти заняття", ex);
+        }
+    }
+
+    /** Додає рядок у таблицю lesson і повертає згенерований ідентифікатор. */
+    private int insertLesson(Connection c, Lesson lesson) throws SQLException {
+        String sql = "INSERT INTO lesson (section_id, entry_id, room_id, leader_id, lesson_date, "
+                + "start_time, end_time, topic) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        ScheduleEntry entry = lesson.getEntry();
+        try (PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, entry.getSection().getId());
+            ps.setInt(2, entry.getId());
+            ps.setInt(3, entry.getRoom().getId());
+            ps.setInt(4, entry.getLeaderId());
+            ps.setDate(5, Date.valueOf(lesson.getDate()));
+            ps.setTime(6, Time.valueOf(entry.getSlot().getStart()));
+            ps.setTime(7, Time.valueOf(entry.getSlot().getEnd()));
+            ps.setString(8, lesson.getTopic());
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                keys.next();
+                return keys.getInt(1);
+            }
+        }
+    }
+
+    private void insertAttendance(Connection c, int lessonId, List<AttendanceMark> marks) throws SQLException {
+        String sql = "INSERT INTO attendance (lesson_id, participant_id, present) VALUES (?, ?, ?)";
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            for (AttendanceMark mark : marks) {
+                ps.setInt(1, lessonId);
+                ps.setInt(2, mark.getParticipantId());
+                ps.setBoolean(3, mark.isPresent());
+                ps.addBatch();
+            }
+            ps.executeBatch();
         }
     }
 

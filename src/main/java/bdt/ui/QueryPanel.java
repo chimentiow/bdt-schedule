@@ -2,6 +2,7 @@ package bdt.ui;
 
 import bdt.db.Database;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.sql.PreparedStatement;
@@ -43,35 +44,45 @@ public class QueryPanel extends JPanel {
         list.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) showQuery();
         });
-        sqlText.setEditable(false);
-        sqlText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        JButton run = new JButton("Виконати запит");
-        run.addActionListener(e -> execute());
 
-        JPanel right = new JPanel(new BorderLayout(4, 4));
-        JPanel north = new JPanel(new BorderLayout());
-        paramPanel.setBorder(BorderFactory.createTitledBorder("Параметри"));
-        north.add(paramPanel, BorderLayout.NORTH);
-        JScrollPane sqlScroll = new JScrollPane(sqlText);
-        sqlScroll.setBorder(BorderFactory.createTitledBorder("Текст запиту SQL"));
-        north.add(sqlScroll, BorderLayout.CENTER);
-        JPanel runRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        runRow.add(run);
-        runRow.add(status);
-        north.add(runRow, BorderLayout.SOUTH);
-        JTable table = new JTable(result);
-        table.setRowHeight(22);
-        JScrollPane resScroll = new JScrollPane(table);
-        resScroll.setBorder(BorderFactory.createTitledBorder("Результат"));
-        right.add(north, BorderLayout.NORTH);
-        right.add(resScroll, BorderLayout.CENTER);
-
-        JScrollPane listScroll = new JScrollPane(list);
-        listScroll.setBorder(BorderFactory.createTitledBorder("Запити"));
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, listScroll, right);
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, titledScroll(list, "Запити"),
+                buildQueryPanel());
         split.setDividerLocation(400);
         add(split, BorderLayout.CENTER);
         list.setSelectedIndex(0);
+    }
+
+    /** Права частина вкладки: параметри й текст запиту, під ними – результат. */
+    private JPanel buildQueryPanel() {
+        JTable table = new JTable(result);
+        table.setRowHeight(22);
+        JPanel panel = new JPanel(new BorderLayout(4, 4));
+        panel.add(buildQueryHeader(), BorderLayout.NORTH);
+        panel.add(titledScroll(table, "Результат"), BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel buildQueryHeader() {
+        sqlText.setEditable(false);
+        sqlText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        paramPanel.setBorder(BorderFactory.createTitledBorder("Параметри"));
+        JButton run = new JButton("Виконати запит");
+        run.addActionListener(e -> execute());
+        JPanel runRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        runRow.add(run);
+        runRow.add(status);
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.add(paramPanel, BorderLayout.NORTH);
+        header.add(titledScroll(sqlText, "Текст запиту SQL"), BorderLayout.CENTER);
+        header.add(runRow, BorderLayout.SOUTH);
+        return header;
+    }
+
+    private static JScrollPane titledScroll(Component view, String title) {
+        JScrollPane scroll = new JScrollPane(view);
+        scroll.setBorder(BorderFactory.createTitledBorder(title));
+        return scroll;
     }
 
     private void showQuery() {
