@@ -2,12 +2,11 @@ package bdt.ui;
 
 import bdt.db.Database;
 import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +34,7 @@ public class QueryPanel extends JPanel {
         @Override
         public boolean isCellEditable(int r, int c) { return false; }
     };
-    private final JLabel status = new JLabel(" ");
+    private final StatusLabel status = new StatusLabel();
 
     public QueryPanel(Database db, List<QueryDef> queries) {
         super(new BorderLayout(6, 6));
@@ -45,35 +44,45 @@ public class QueryPanel extends JPanel {
         list.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) showQuery();
         });
-        sqlText.setEditable(false);
-        sqlText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        JButton run = new JButton("Виконати запит");
-        run.addActionListener(e -> execute());
 
-        JPanel right = new JPanel(new BorderLayout(4, 4));
-        JPanel north = new JPanel(new BorderLayout());
-        paramPanel.setBorder(BorderFactory.createTitledBorder("Параметри"));
-        north.add(paramPanel, BorderLayout.NORTH);
-        JScrollPane sqlScroll = new JScrollPane(sqlText);
-        sqlScroll.setBorder(BorderFactory.createTitledBorder("Текст запиту SQL"));
-        north.add(sqlScroll, BorderLayout.CENTER);
-        JPanel runRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        runRow.add(run);
-        runRow.add(status);
-        north.add(runRow, BorderLayout.SOUTH);
-        JTable table = new JTable(result);
-        table.setRowHeight(22);
-        JScrollPane resScroll = new JScrollPane(table);
-        resScroll.setBorder(BorderFactory.createTitledBorder("Результат"));
-        right.add(north, BorderLayout.NORTH);
-        right.add(resScroll, BorderLayout.CENTER);
-
-        JScrollPane listScroll = new JScrollPane(list);
-        listScroll.setBorder(BorderFactory.createTitledBorder("Запити"));
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, listScroll, right);
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, titledScroll(list, "Запити"),
+                buildQueryPanel());
         split.setDividerLocation(400);
         add(split, BorderLayout.CENTER);
         list.setSelectedIndex(0);
+    }
+
+    /** Права частина вкладки: параметри й текст запиту, під ними – результат. */
+    private JPanel buildQueryPanel() {
+        JTable table = new JTable(result);
+        table.setRowHeight(22);
+        JPanel panel = new JPanel(new BorderLayout(4, 4));
+        panel.add(buildQueryHeader(), BorderLayout.NORTH);
+        panel.add(titledScroll(table, "Результат"), BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel buildQueryHeader() {
+        sqlText.setEditable(false);
+        sqlText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        paramPanel.setBorder(BorderFactory.createTitledBorder("Параметри"));
+        JButton run = new JButton("Виконати запит");
+        run.addActionListener(e -> execute());
+        JPanel runRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        runRow.add(run);
+        runRow.add(status);
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.add(paramPanel, BorderLayout.NORTH);
+        header.add(titledScroll(sqlText, "Текст запиту SQL"), BorderLayout.CENTER);
+        header.add(runRow, BorderLayout.SOUTH);
+        return header;
+    }
+
+    private static JScrollPane titledScroll(Component view, String title) {
+        JScrollPane scroll = new JScrollPane(view);
+        scroll.setBorder(BorderFactory.createTitledBorder(title));
+        return scroll;
     }
 
     private void showQuery() {
@@ -93,7 +102,7 @@ public class QueryPanel extends JPanel {
         sqlText.setText(q.sql());
         sqlText.setCaretPosition(0);
         result.setDataVector(new Object[0][], new Object[0]);
-        status.setText(" ");
+        status.clear();
     }
 
     public void execute() {
@@ -105,21 +114,11 @@ public class QueryPanel extends JPanel {
                 ps.setString(i + 1, paramFields.get(i % paramFields.size()).getText().trim());
             }
             try (ResultSet rs = ps.executeQuery()) {
-                ResultSetMetaData md = rs.getMetaData();
-                Object[] cols = new Object[md.getColumnCount()];
-                for (int i = 0; i < cols.length; i++) cols[i] = md.getColumnLabel(i + 1);
-                result.setDataVector(new Object[0][], cols);
-                while (rs.next()) {
-                    Object[] row = new Object[cols.length];
-                    for (int i = 0; i < cols.length; i++) row[i] = rs.getObject(i + 1);
-                    result.addRow(row);
-                }
+                ResultSetTable.fill(result, rs);
             }
-            status.setForeground(new Color(0, 120, 0));
-            status.setText("Знайдено рядків: " + result.getRowCount());
+            status.showOk("Знайдено рядків: " + result.getRowCount());
         } catch (SQLException ex) {
-            status.setForeground(new Color(180, 0, 0));
-            status.setText("Помилка: " + ex.getMessage().split("\n")[0]);
+            status.showError("Помилка: " + ex.getMessage().split("\n")[0]);
         }
     }
 

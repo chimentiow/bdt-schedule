@@ -5,14 +5,11 @@ import bdt.controller.ScheduleException;
 import bdt.dao.DataException;
 import bdt.model.AttendanceMark;
 import bdt.model.Lesson;
+import bdt.model.LessonSummary;
 import bdt.model.Section;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import javax.swing.BorderFactory;
@@ -28,19 +25,23 @@ import javax.swing.table.DefaultTableModel;
 
 /** Вкладка «Журнал занять»: прецедент «Облік фактичного заняття». */
 public class JournalPanel extends JPanel {
+    private static final int ROW_HEIGHT = 24;
+    private static final int PRESENT_COLUMN = 0;
+    private static final int ID_COLUMN = 2;
+
     private final LessonController controller;
     private final MainWindow main;
     private final JComboBox<Section> section = new JComboBox<>();
     private final JTextField date = new JTextField(LocalDate.now().toString(), 10);
     private final JTextField topic = new JTextField(30);
     private final JLabel lessonInfo = new JLabel(" ");
-    private final JLabel status = new JLabel(" ");
+    private final StatusLabel status = new StatusLabel();
     private final DefaultTableModel marks = new DefaultTableModel(new Object[]{"Присутній", "Учасник", "ID"}, 0) {
         @Override
-        public Class<?> getColumnClass(int c) { return c == 0 ? Boolean.class : Object.class; }
+        public Class<?> getColumnClass(int column) { return column == PRESENT_COLUMN ? Boolean.class : Object.class; }
 
         @Override
-        public boolean isCellEditable(int r, int c) { return c == 0; }
+        public boolean isCellEditable(int row, int column) { return column == PRESENT_COLUMN; }
     };
     private final DefaultTableModel history = new DefaultTableModel(
             new Object[]{"Дата", "Час", "Приміщення", "Тема", "Присутні"}, 0) {
@@ -54,54 +55,73 @@ public class JournalPanel extends JPanel {
         this.main = main;
         main.getSectionCatalog().findAll().forEach(section::addItem);
 
-        JPanel top = new JPanel(new GridLayout(3, 1));
-        JPanel r1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        r1.add(new JLabel("Секція:"));
-        r1.add(section);
-        r1.add(new JLabel("Дата (РРРР-ММ-ДД):"));
-        r1.add(date);
-        JButton open = new JButton("Відкрити заняття");
-        r1.add(open);
-        JPanel r2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        r2.add(lessonInfo);
-        JPanel r3 = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        r3.add(new JLabel("Тема заняття:"));
-        r3.add(topic);
-        JButton close = new JButton("Зберегти заняття");
-        r3.add(close);
-        top.add(r1);
-        top.add(r2);
-        top.add(r3);
-
-        JTable marksTable = new JTable(marks);
-        marksTable.setRowHeight(24);
-        marksTable.getColumnModel().getColumn(0).setMaxWidth(90);
-        marksTable.getColumnModel().getColumn(2).setMaxWidth(50);
-        marks.addTableModelListener(e -> {
-            if (e.getColumn() == 0 && e.getFirstRow() >= 0 && controller.getLesson() != null) {
-                int r = e.getFirstRow();
-                controller.markAttendance((Integer) marks.getValueAt(r, 2), (Boolean) marks.getValueAt(r, 0));
-            }
-        });
-        JPanel left = new JPanel(new BorderLayout());
-        left.setBorder(BorderFactory.createTitledBorder("Відвідування"));
-        left.add(new JScrollPane(marksTable));
-        JTable histTable = new JTable(history);
-        histTable.setRowHeight(24);
-        JPanel right = new JPanel(new BorderLayout());
-        right.setBorder(BorderFactory.createTitledBorder("Проведені заняття секції"));
-        right.add(new JScrollPane(histTable));
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, right);
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, buildAttendancePanel(), buildHistoryPanel());
         split.setResizeWeight(0.4);
-
-        add(top, BorderLayout.NORTH);
+        add(buildTopPanel(), BorderLayout.NORTH);
         add(split, BorderLayout.CENTER);
         add(status, BorderLayout.SOUTH);
 
         section.addActionListener(e -> loadHistory());
-        open.addActionListener(e -> openLesson());
-        close.addActionListener(e -> closeLesson());
         loadHistory();
+    }
+
+    /** Верхня частина: вибір секції й дати, відомості про заняття, тема. */
+    private JPanel buildTopPanel() {
+        JPanel selectionRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        selectionRow.add(new JLabel("Секція:"));
+        selectionRow.add(section);
+        selectionRow.add(new JLabel("Дата (РРРР-ММ-ДД):"));
+        selectionRow.add(date);
+        selectionRow.add(button("Відкрити заняття", this::openLesson));
+
+        JPanel infoRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        infoRow.add(lessonInfo);
+
+        JPanel topicRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topicRow.add(new JLabel("Тема заняття:"));
+        topicRow.add(topic);
+        topicRow.add(button("Зберегти заняття", this::closeLesson));
+
+        JPanel top = new JPanel(new GridLayout(3, 1));
+        top.add(selectionRow);
+        top.add(infoRow);
+        top.add(topicRow);
+        return top;
+    }
+
+    /** Таблиця відміток присутності; зміна прапорця одразу передається контролеру. */
+    private JPanel buildAttendancePanel() {
+        JTable marksTable = new JTable(marks);
+        marksTable.setRowHeight(ROW_HEIGHT);
+        marksTable.getColumnModel().getColumn(PRESENT_COLUMN).setMaxWidth(90);
+        marksTable.getColumnModel().getColumn(ID_COLUMN).setMaxWidth(50);
+        marks.addTableModelListener(e -> {
+            if (e.getColumn() == PRESENT_COLUMN && e.getFirstRow() >= 0 && controller.getLesson() != null) {
+                int row = e.getFirstRow();
+                controller.markAttendance((Integer) marks.getValueAt(row, ID_COLUMN),
+                        (Boolean) marks.getValueAt(row, PRESENT_COLUMN));
+            }
+        });
+        return titledPanel("Відвідування", marksTable);
+    }
+
+    private JPanel buildHistoryPanel() {
+        JTable historyTable = new JTable(history);
+        historyTable.setRowHeight(ROW_HEIGHT);
+        return titledPanel("Проведені заняття секції", historyTable);
+    }
+
+    private static JPanel titledPanel(String title, JTable table) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder(title));
+        panel.add(new JScrollPane(table));
+        return panel;
+    }
+
+    private static JButton button(String text, Runnable action) {
+        JButton button = new JButton(text);
+        button.addActionListener(e -> action.run());
+        return button;
     }
 
     public void openLesson() {
@@ -113,14 +133,13 @@ public class JournalPanel extends JPanel {
                 marks.addRow(new Object[]{m.isPresent(), m.getParticipantName(), m.getParticipantId()});
             }
             lessonInfo.setText("За розкладом: " + l.getEntry().getSlot() + ", приміщення "
-                    + l.getEntry().getRoom().getNumber() + ", керівник "
-                    + l.getEntry().getSection().getLeader().getShortName()
+                    + l.getEntry().getRoom().getNumber() + ", керівник " + l.getEntry().getLeaderName()
                     + ".  Учасників у списку: " + l.getMarks().size());
-            ok("Заняття відкрито. Відмітьте відсутніх і вкажіть тему.");
+            status.showOk("Заняття відкрито. Відмітьте відсутніх і вкажіть тему.");
         } catch (DateTimeParseException ex) {
-            error("Дата вводиться у форматі РРРР-ММ-ДД.");
+            status.showError("Дата вводиться у форматі РРРР-ММ-ДД.");
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -129,14 +148,14 @@ public class JournalPanel extends JPanel {
             controller.setTopic(topic.getText());
             int total = marks.getRowCount();
             int present = controller.closeLesson();
-            ok("Заняття збережено. Присутні: " + present + " з " + total + ".");
+            status.showOk("Заняття збережено. Присутні: " + present + " з " + total + ".");
             marks.setRowCount(0);
             topic.setText("");
             lessonInfo.setText(" ");
             loadHistory();
             main.refreshStatus();
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -144,22 +163,13 @@ public class JournalPanel extends JPanel {
         history.setRowCount(0);
         Section s = (Section) section.getSelectedItem();
         if (s == null) return;
-        String sql = "SELECT ls.lesson_date, ls.start_time, r.room_number, ls.topic, "
-                + "SUM(CASE WHEN a.present THEN 1 ELSE 0 END) || ' з ' || COUNT(a.participant_id) "
-                + "FROM lesson ls JOIN room r ON r.room_id = ls.room_id "
-                + "LEFT JOIN attendance a ON a.lesson_id = ls.lesson_id WHERE ls.section_id = ? "
-                + "GROUP BY ls.lesson_id, ls.lesson_date, ls.start_time, r.room_number, ls.topic "
-                + "ORDER BY ls.lesson_date DESC, ls.start_time DESC";
-        try (PreparedStatement ps = main.getDatabase().getConnection().prepareStatement(sql)) {
-            ps.setInt(1, s.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    history.addRow(new Object[]{rs.getDate(1), rs.getTime(2).toString().substring(0, 5),
-                            rs.getString(3), rs.getString(4), rs.getString(5)});
-                }
+        try {
+            for (LessonSummary l : controller.getHistory(s.getId())) {
+                history.addRow(new Object[]{l.getDate(), l.getStartText(), l.getRoomNumber(), l.getTopic(),
+                        l.getAttendance()});
             }
-        } catch (SQLException ex) {
-            error(ex.getMessage());
+        } catch (DataException ex) {
+            status.showError(ex.getMessage());
         }
     }
 
@@ -170,8 +180,5 @@ public class JournalPanel extends JPanel {
         topic.setText(lessonTopic);
     }
 
-    public void demoAbsent(int row) { marks.setValueAt(Boolean.FALSE, row, 0); }
-
-    private void error(String m) { status.setForeground(new Color(180, 0, 0)); status.setText(m); }
-    private void ok(String m) { status.setForeground(new Color(0, 120, 0)); status.setText(m); }
+    public void demoAbsent(int row) { marks.setValueAt(Boolean.FALSE, row, PRESENT_COLUMN); }
 }

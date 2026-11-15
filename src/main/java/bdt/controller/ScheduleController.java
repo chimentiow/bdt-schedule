@@ -53,19 +53,11 @@ public class ScheduleController {
 
     /** Системна операція 3: setTime(day, start, end) – перевірка зайнятості керівника. */
     public void setTime(int day, LocalTime start, LocalTime end) {
-        requireEntry();
-        if (entry.getSection() == null) {
-            throw new ScheduleException("Спочатку оберіть секцію.");
-        }
-        TimeSlot slot;
-        try {
-            slot = new TimeSlot(day, start, end);
-        } catch (IllegalArgumentException ex) {
-            throw new ScheduleException(ex.getMessage());
-        }
+        requireSection();
+        TimeSlot slot = createSlot(day, start, end);
         ScheduleEntry conflict = schedule.findLeaderConflict(entry.getLeaderId(), slot);
         if (conflict != null) {
-            throw new ScheduleException("Керівник " + entry.getSection().getLeader().getShortName()
+            throw new ScheduleException("Керівник " + entry.getLeaderName()
                     + " у цей час зайнятий: " + conflict.describe() + ".");
         }
         entry.setSlot(slot);
@@ -74,10 +66,7 @@ public class ScheduleController {
 
     /** Системна операція 4: getFreeRooms() – вільні приміщення достатньої місткості. */
     public List<Room> getFreeRooms() {
-        requireEntry();
-        if (entry.getSlot() == null) {
-            throw new ScheduleException("Спочатку вкажіть день і час заняття.");
-        }
+        requireSlot();
         List<Room> result = new ArrayList<>();
         for (Room room : rooms.findAll()) {
             if (room.fits(participants) && schedule.isRoomFree(room.getId(), entry.getSlot())) {
@@ -89,10 +78,7 @@ public class ScheduleController {
 
     /** Системна операція 5: selectRoom(roomId). */
     public void selectRoom(int roomId) {
-        requireEntry();
-        if (entry.getSlot() == null) {
-            throw new ScheduleException("Спочатку вкажіть день і час заняття.");
-        }
+        requireSlot();
         Room room = rooms.findRoom(roomId);
         if (room == null) {
             throw new ScheduleException("Приміщення не знайдено.");
@@ -114,8 +100,7 @@ public class ScheduleController {
         if (!entry.isComplete()) {
             throw new ScheduleException("Запис розкладу заповнено не повністю.");
         }
-        int id = store.insert(entry);
-        entry.setId(id);
+        entry.setId(store.insert(entry));
         schedule.add(entry);
         ScheduleEntry saved = entry;
         entry = null;
@@ -131,9 +116,32 @@ public class ScheduleController {
     public ScheduleEntry getCurrentEntry() { return entry; }
     public Schedule getSchedule() { return schedule; }
 
+    /** Створює інтервал; помилки значень перетворює на повідомлення для користувача. */
+    private TimeSlot createSlot(int day, LocalTime start, LocalTime end) {
+        try {
+            return new TimeSlot(day, start, end);
+        } catch (IllegalArgumentException ex) {
+            throw new ScheduleException(ex.getMessage());
+        }
+    }
+
     private void requireEntry() {
         if (entry == null) {
             throw new ScheduleException("Новий запис розкладу не відкрито.");
+        }
+    }
+
+    private void requireSection() {
+        requireEntry();
+        if (entry.getSection() == null) {
+            throw new ScheduleException("Спочатку оберіть секцію.");
+        }
+    }
+
+    private void requireSlot() {
+        requireEntry();
+        if (entry.getSlot() == null) {
+            throw new ScheduleException("Спочатку вкажіть день і час заняття.");
         }
     }
 }

@@ -2,25 +2,35 @@ package bdt.controller;
 
 import bdt.dao.LessonStore;
 import bdt.model.Lesson;
+import bdt.model.LessonSummary;
 import bdt.model.Schedule;
 import bdt.model.ScheduleEntry;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 /** Контролер прецеденту «Облік фактичного заняття». */
 public class LessonController {
     private final LessonStore store;
     private final Schedule schedule;
+    private final Clock clock;
     private Lesson lesson;
 
     public LessonController(LessonStore store, Schedule schedule) {
+        this(store, schedule, Clock.systemDefaultZone());
+    }
+
+    /** Годинник передається параметром, щоб поточну дату можна було задати під час тестування. */
+    public LessonController(LessonStore store, Schedule schedule, Clock clock) {
         this.store = store;
         this.schedule = schedule;
+        this.clock = clock;
     }
 
     /** Системна операція 1: openLesson(sectionId, date). */
     public Lesson openLesson(int sectionId, LocalDate date) {
-        if (date == null || date.isAfter(LocalDate.now())) {
+        if (date == null || date.isAfter(LocalDate.now(clock))) {
             throw new ScheduleException("Не можна зареєструвати заняття на майбутню дату.");
         }
         ScheduleEntry entry = schedule.findEntry(sectionId, date.getDayOfWeek().getValue());
@@ -61,6 +71,11 @@ public class LessonController {
         int present = lesson.countPresent();
         lesson = null;
         return present;
+    }
+
+    /** Історія проведених занять секції для журналу. */
+    public List<LessonSummary> getHistory(int sectionId) {
+        return store.findHistory(sectionId);
     }
 
     public Lesson getLesson() { return lesson; }

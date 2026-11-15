@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Тижневий розклад занять. Інформаційний експерт щодо зайнятості
@@ -22,22 +23,12 @@ public class Schedule {
 
     /** Повертає запис, з яким керівник має перетин у часі, або null, якщо керівник вільний. */
     public ScheduleEntry findLeaderConflict(int leaderId, TimeSlot slot) {
-        for (ScheduleEntry e : entries) {
-            if (e.getLeaderId() == leaderId && e.getSlot().overlaps(slot)) {
-                return e;
-            }
-        }
-        return null;
+        return findFirst(e -> e.keepsLeaderBusy(leaderId, slot));
     }
 
     /** Повертає запис, який займає приміщення у вказаний час, або null. */
     public ScheduleEntry findRoomConflict(int roomId, TimeSlot slot) {
-        for (ScheduleEntry e : entries) {
-            if (e.getRoom().getId() == roomId && e.getSlot().overlaps(slot)) {
-                return e;
-            }
-        }
-        return null;
+        return findFirst(e -> e.occupiesRoom(roomId, slot));
     }
 
     public boolean isLeaderFree(int leaderId, TimeSlot slot) {
@@ -50,8 +41,13 @@ public class Schedule {
 
     /** Запис розкладу секції на заданий день тижня (для обліку фактичних занять). */
     public ScheduleEntry findEntry(int sectionId, int day) {
+        return findFirst(e -> e.isForSectionOn(sectionId, day));
+    }
+
+    /** Перший запис розкладу, що задовольняє умову, або null, якщо такого запису немає. */
+    private ScheduleEntry findFirst(Predicate<ScheduleEntry> condition) {
         for (ScheduleEntry e : entries) {
-            if (e.getSection().getId() == sectionId && e.getSlot().getDay() == day) {
+            if (condition.test(e)) {
                 return e;
             }
         }

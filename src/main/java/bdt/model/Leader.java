@@ -16,13 +16,22 @@ public class Leader {
 
     public int getId() { return id; }
 
+    /** Прізвище та ініціали, наприклад «Мельник А. В.». */
     public String getShortName() {
-        return lastName + " " + firstName.charAt(0) + "." + (middleName == null || middleName.isEmpty()
-                ? "" : " " + middleName.charAt(0) + ".");
+        String initials = firstName.charAt(0) + ".";
+        if (hasMiddleName()) {
+            initials += " " + middleName.charAt(0) + ".";
+        }
+        return lastName + " " + initials;
     }
 
     public String getFullName() {
-        return lastName + " " + firstName + (middleName == null ? "" : " " + middleName);
+        String fullName = lastName + " " + firstName;
+        return middleName == null ? fullName : fullName + " " + middleName;
+    }
+
+    private boolean hasMiddleName() {
+        return middleName != null && !middleName.isEmpty();
     }
 
     @Override

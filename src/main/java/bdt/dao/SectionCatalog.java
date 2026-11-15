@@ -25,7 +25,7 @@ public class SectionCatalog implements SectionSource {
         try (PreparedStatement ps = db.getConnection().prepareStatement(SELECT + "WHERE s.section_id = ?")) {
             ps.setInt(1, sectionId);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? map(rs) : null;
+                return rs.next() ? mapSection(rs) : null;
             }
         } catch (SQLException e) {
             throw new DataException("Помилка читання секції", e);
@@ -35,12 +35,8 @@ public class SectionCatalog implements SectionSource {
     @Override
     public int countActiveParticipants(int sectionId) {
         String sql = "SELECT COUNT(*) FROM enrollment WHERE section_id = ? AND status = 'Активний'";
-        try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
-            ps.setInt(1, sectionId);
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getInt(1);
-            }
+        try {
+            return db.queryInt(sql, sectionId);
         } catch (SQLException e) {
             throw new DataException("Помилка підрахунку учасників", e);
         }
@@ -52,7 +48,7 @@ public class SectionCatalog implements SectionSource {
         try (PreparedStatement ps = db.getConnection().prepareStatement(SELECT + "ORDER BY s.name");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(map(rs));
+                list.add(mapSection(rs));
             }
         } catch (SQLException e) {
             throw new DataException("Помилка читання секцій", e);
@@ -60,7 +56,7 @@ public class SectionCatalog implements SectionSource {
         return list;
     }
 
-    static Section map(ResultSet rs) throws SQLException {
+    static Section mapSection(ResultSet rs) throws SQLException {
         Leader leader = new Leader(rs.getInt("leader_id"), rs.getString("last_name"),
                 rs.getString("first_name"), rs.getString("middle_name"));
         return new Section(rs.getInt("section_id"), rs.getString("name"), rs.getString("direction"),

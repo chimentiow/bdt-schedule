@@ -6,8 +6,8 @@ import bdt.dao.DataException;
 import bdt.model.Room;
 import bdt.model.ScheduleEntry;
 import bdt.model.Section;
+import bdt.model.TimeSlot;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -39,13 +39,12 @@ public class AddEntryDialog extends JDialog {
     private final ScheduleController controller;
     private final JComboBox<Section> section = new JComboBox<>();
     private final JLabel sectionInfo = new JLabel(" ");
-    private final JComboBox<String> day = new JComboBox<>(
-            new String[]{"Понеділок", "Вівторок", "Середа", "Четвер", "П’ятниця", "Субота", "Неділя"});
+    private final JComboBox<String> day = new JComboBox<>(TimeSlot.dayNames());
     private final JTextField start = new JTextField("15:00", 6);
     private final JTextField end = new JTextField("16:30", 6);
     private final DefaultListModel<Room> roomsModel = new DefaultListModel<>();
     private final JList<Room> rooms = new JList<>(roomsModel);
-    private final JLabel status = new JLabel(" ");
+    private final StatusLabel status = new StatusLabel();
     private final JButton save = new JButton("Зберегти в розкладі");
     private Consumer<ScheduleEntry> onSaved = e -> { };
 
@@ -55,68 +54,83 @@ public class AddEntryDialog extends JDialog {
         controller.newEntry();                                   // системна операція 1
         sections.forEach(section::addItem);
         section.setSelectedIndex(-1);
+        section.addActionListener(e -> chooseSection());
+        save.setEnabled(false);
+        save.addActionListener(e -> saveEntry());
 
+        setLayout(new BorderLayout());
+        add(buildForm(), BorderLayout.CENTER);
+        add(buildBottomPanel(), BorderLayout.SOUTH);
+        setSize(760, 470);
+        setLocationRelativeTo(owner);
+    }
+
+    /** Форма з трьох кроків: секція, день і час, приміщення. */
+    private JPanel buildForm() {
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(10, 12, 6, 12));
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(5, 5, 5, 5);
-        g.anchor = GridBagConstraints.WEST;
-        g.fill = GridBagConstraints.HORIZONTAL;
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        g.gridx = 0; g.gridy = 0; form.add(step("1. Секція:"), g);
-        g.gridx = 1; g.weightx = 1; form.add(section, g);
-        g.gridx = 1; g.gridy = 1; form.add(sectionInfo, g);
+        gbc.gridx = 0; gbc.gridy = 0; form.add(stepLabel("1. Секція:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1; form.add(section, gbc);
+        gbc.gridx = 1; gbc.gridy = 1; form.add(sectionInfo, gbc);
 
-        g.gridx = 0; g.gridy = 2; g.weightx = 0; form.add(step("2. День і час:"), g);
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0; form.add(stepLabel("2. День і час:"), gbc);
+        gbc.gridx = 1; form.add(buildTimeRow(), gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3; form.add(stepLabel("3. Приміщення:"), gbc);
+        gbc.gridx = 1; form.add(button("Підібрати вільні приміщення", this::findRooms), gbc);
+        gbc.gridx = 1; gbc.gridy = 4; gbc.weighty = 1; gbc.fill = GridBagConstraints.BOTH;
+        form.add(buildRoomList(), gbc);
+        return form;
+    }
+
+    private JPanel buildTimeRow() {
         JPanel time = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         time.add(day);
         time.add(new JLabel("  з"));
         time.add(start);
         time.add(new JLabel("до"));
         time.add(end);
-        JButton check = new JButton("Перевірити керівника");
-        time.add(check);
-        g.gridx = 1; form.add(time, g);
+        time.add(button("Перевірити керівника", this::checkTime));
+        return time;
+    }
 
-        g.gridx = 0; g.gridy = 3; form.add(step("3. Приміщення:"), g);
-        JButton find = new JButton("Підібрати вільні приміщення");
-        g.gridx = 1; form.add(find, g);
+    private JScrollPane buildRoomList() {
         rooms.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rooms.setVisibleRowCount(6);
-        g.gridx = 1; g.gridy = 4; g.weighty = 1; g.fill = GridBagConstraints.BOTH;
-        form.add(new JScrollPane(rooms), g);
-
-        JPanel south = new JPanel(new BorderLayout());
-        south.setBorder(BorderFactory.createEmptyBorder(0, 12, 10, 12));
-        status.setFont(status.getFont().deriveFont(Font.BOLD));
-        south.add(status, BorderLayout.CENTER);
-        JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton cancel = new JButton("Скасувати");
-        btns.add(save);
-        btns.add(cancel);
-        south.add(btns, BorderLayout.SOUTH);
-        save.setEnabled(false);
-
-        section.addActionListener(e -> chooseSection());
-        check.addActionListener(e -> checkTime());
-        find.addActionListener(e -> findRooms());
         rooms.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && rooms.getSelectedValue() != null) chooseRoom();
         });
-        save.addActionListener(e -> saveEntry());
-        cancel.addActionListener(e -> dispose());
-
-        setLayout(new BorderLayout());
-        add(form, BorderLayout.CENTER);
-        add(south, BorderLayout.SOUTH);
-        setSize(760, 470);
-        setLocationRelativeTo(owner);
+        return new JScrollPane(rooms);
     }
 
-    private static JLabel step(String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(l.getFont().deriveFont(Font.BOLD));
-        return l;
+    /** Рядок повідомлень і кнопки «Зберегти» та «Скасувати». */
+    private JPanel buildBottomPanel() {
+        JPanel bottom = new JPanel(new BorderLayout());
+        bottom.setBorder(BorderFactory.createEmptyBorder(0, 12, 10, 12));
+        status.setFont(status.getFont().deriveFont(Font.BOLD));
+        bottom.add(status, BorderLayout.CENTER);
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttons.add(save);
+        buttons.add(button("Скасувати", this::dispose));
+        bottom.add(buttons, BorderLayout.SOUTH);
+        return bottom;
+    }
+
+    private static JLabel stepLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(label.getFont().deriveFont(Font.BOLD));
+        return label;
+    }
+
+    private static JButton button(String text, Runnable action) {
+        JButton button = new JButton(text);
+        button.addActionListener(e -> action.run());
+        return button;
     }
 
     private void chooseSection() {
@@ -128,9 +142,9 @@ public class AddEntryDialog extends JDialog {
                     + controller.getParticipants() + " (макс. " + s.getMaxParticipants() + ")");
             roomsModel.clear();
             save.setEnabled(false);
-            info("Вкажіть день тижня та час заняття.");
+            status.showInfo("Вкажіть день тижня та час заняття.");
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -140,11 +154,11 @@ public class AddEntryDialog extends JDialog {
                     LocalTime.parse(start.getText().trim()), LocalTime.parse(end.getText().trim())); // операція 3
             roomsModel.clear();
             save.setEnabled(false);
-            ok("Керівник вільний у цей час. Підберіть приміщення.");
+            status.showOk("Керівник вільний у цей час. Підберіть приміщення.");
         } catch (DateTimeParseException ex) {
-            error("Час вводиться у форматі ГГ:ХХ, наприклад 15:30.");
+            status.showError("Час вводиться у форматі ГГ:ХХ, наприклад 15:30.");
         } catch (ScheduleException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -153,10 +167,10 @@ public class AddEntryDialog extends JDialog {
             List<Room> free = controller.getFreeRooms();          // системна операція 4
             roomsModel.clear();
             free.forEach(roomsModel::addElement);
-            if (free.isEmpty()) error("Немає вільних приміщень потрібної місткості. Змініть час заняття.");
-            else info("Знайдено вільних приміщень: " + free.size() + ". Оберіть приміщення.");
+            if (free.isEmpty()) status.showError("Немає вільних приміщень потрібної місткості. Змініть час заняття.");
+            else status.showInfo("Знайдено вільних приміщень: " + free.size() + ". Оберіть приміщення.");
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -164,10 +178,10 @@ public class AddEntryDialog extends JDialog {
         try {
             controller.selectRoom(rooms.getSelectedValue().getId()); // системна операція 5
             save.setEnabled(true);
-            ok("Приміщення " + rooms.getSelectedValue().getNumber() + " обрано. Підтвердіть збереження.");
+            status.showOk("Приміщення " + rooms.getSelectedValue().getNumber() + " обрано. Підтвердіть збереження.");
         } catch (ScheduleException | DataException ex) {
             save.setEnabled(false);
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -177,7 +191,7 @@ public class AddEntryDialog extends JDialog {
             onSaved.accept(saved);
             dispose();
         } catch (ScheduleException | DataException ex) {
-            error(ex.getMessage());
+            status.showError(ex.getMessage());
         }
     }
 
@@ -194,8 +208,4 @@ public class AddEntryDialog extends JDialog {
     public void demoFindRooms() { findRooms(); }
     public void demoRoom(int index) { rooms.setSelectedIndex(index); }
     public void demoSave() { saveEntry(); }
-
-    private void error(String m) { status.setForeground(new Color(180, 0, 0)); status.setText(m); }
-    private void ok(String m) { status.setForeground(new Color(0, 120, 0)); status.setText(m); }
-    private void info(String m) { status.setForeground(Color.DARK_GRAY); status.setText(m); }
 }

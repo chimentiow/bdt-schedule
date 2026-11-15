@@ -2,12 +2,15 @@ package bdt.ui;
 
 import bdt.controller.ScheduleController;
 import bdt.controller.ScheduleException;
+import bdt.dao.DataException;
 import bdt.model.ScheduleEntry;
 import bdt.model.TimeSlot;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Window;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -28,9 +31,8 @@ public class SchedulePanel extends JPanel {
         public boolean isCellEditable(int r, int c) { return false; }
     };
     private final JTable table = new JTable(model);
-    private final JComboBox<String> dayFilter = new JComboBox<>(
-            new String[]{"Усі дні", "Понеділок", "Вівторок", "Середа", "Четвер", "П’ятниця", "Субота", "Неділя"});
-    private final JLabel status = new JLabel(" ");
+    private final JComboBox<String> dayFilter = new JComboBox<>(dayFilterItems());
+    private final StatusLabel status = new StatusLabel();
 
     public SchedulePanel(ScheduleController controller, MainWindow main) {
         super(new BorderLayout(6, 6));
@@ -57,17 +59,24 @@ public class SchedulePanel extends JPanel {
         reload();
     }
 
+    /** Пункти фільтра: «Усі дні» та сім днів тижня. */
+    private static String[] dayFilterItems() {
+        List<String> items = new ArrayList<>();
+        items.add("Усі дні");
+        items.addAll(Arrays.asList(TimeSlot.dayNames()));
+        return items.toArray(new String[0]);
+    }
+
     public void reload() {
         model.setRowCount(0);
         int day = dayFilter.getSelectedIndex();
         for (ScheduleEntry e : controller.getSchedule().getEntries()) {
             if (day > 0 && e.getSlot().getDay() != day) continue;
             model.addRow(new Object[]{e.getId(), TimeSlot.dayName(e.getSlot().getDay()), e.getSlot().timeText(),
-                    e.getSection().getName(), e.getSection().getLeader().getShortName(),
+                    e.getSection().getName(), e.getLeaderName(),
                     e.getRoom().getNumber() + " – " + e.getRoom().getType()});
         }
-        status.setForeground(Color.DARK_GRAY);
-        status.setText("Записів у розкладі: " + model.getRowCount());
+        status.showInfo("Записів у розкладі: " + model.getRowCount());
     }
 
     public AddEntryDialog openAddDialog() {
@@ -75,8 +84,7 @@ public class SchedulePanel extends JPanel {
         AddEntryDialog d = new AddEntryDialog(w, controller, main.getSectionCatalog().findAll());
         d.setOnSaved(saved -> {
             reload();
-            status.setForeground(new Color(0, 120, 0));
-            status.setText("Додано: " + saved.describe());
+            status.showOk("Додано: " + saved.describe());
             main.refreshStatus();
         });
         return d;
@@ -87,8 +95,7 @@ public class SchedulePanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) {
-            status.setForeground(new Color(180, 0, 0));
-            status.setText("Оберіть запис розкладу.");
+            status.showError("Оберіть запис розкладу.");
             return;
         }
         int id = (Integer) model.getValueAt(row, 0);
@@ -97,9 +104,8 @@ public class SchedulePanel extends JPanel {
             try {
                 controller.deleteEntry(id);
                 reload();
-            } catch (ScheduleException | bdt.dao.DataException ex) {
-                status.setForeground(new Color(180, 0, 0));
-                status.setText(ex.getMessage());
+            } catch (ScheduleException | DataException ex) {
+                status.showError(ex.getMessage());
             }
         }
     }

@@ -62,7 +62,7 @@ public final class Stubs {
 
     /** Заглушка типу B/C: приймає записи замість БД, повертає згенерований ідентифікатор. */
     static class ScheduleStoreStub implements ScheduleStore {
-        final List<ScheduleEntry> inserted = new ArrayList<>();
+        private final List<ScheduleEntry> inserted = new ArrayList<>();
         private int nextId = 100;
 
         @Override
@@ -84,6 +84,11 @@ public final class Stubs {
         @Override
         public void delete(int id) {
             inserted.removeIf(e -> e.getId() == id);
+        }
+
+        /** Скільки записів контролер передав на збереження. */
+        int getInsertedCount() {
+            return inserted.size();
         }
     }
 }

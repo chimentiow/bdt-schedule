@@ -8,8 +8,6 @@ import bdt.dao.ScheduleRepository;
 import bdt.dao.SectionCatalog;
 import bdt.db.Database;
 import bdt.model.Lesson;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -36,7 +34,7 @@ public final class IntegrationDriver {
         sc.selectRoom(4);
         int id = sc.saveEntry().getId();
         TestLog.check("IT-5", "Запис збережено в таблиці schedule_entry", 1,
-                count(db, "SELECT COUNT(*) FROM schedule_entry WHERE entry_id = " + id));
+                db.queryInt("SELECT COUNT(*) FROM schedule_entry WHERE entry_id = ?", id));
 
         TestLog.header("Кластер LessonController + LessonRepository");
         LessonController lc = new LessonController(new LessonRepository(db), sc.getSchedule());
@@ -50,16 +48,9 @@ public final class IntegrationDriver {
         lc.markAttendance(l.getMarks().get(0).getParticipantId(), false);
         TestLog.check("IT-9", "closeLesson: кількість присутніх", 8, lc.closeLesson());
         TestLog.check("IT-10", "Відвідування збережено в БД", 9,
-                count(db, "SELECT COUNT(*) FROM attendance WHERE lesson_id = " + l.getId()));
+                db.queryInt("SELECT COUNT(*) FROM attendance WHERE lesson_id = ?", l.getId()));
         TestLog.summary();
         db.close();
         if (TestLog.failed() > 0) System.exit(1);
-    }
-
-    private static int count(Database db, String sql) throws Exception {
-        try (Statement st = db.getConnection().createStatement(); ResultSet rs = st.executeQuery(sql)) {
-            rs.next();
-            return rs.getInt(1);
-        }
     }
 }
