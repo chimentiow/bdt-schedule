@@ -83,7 +83,8 @@ public class MainWindow extends JFrame {
     /** Розрахунок суми оплати за стратегією FeePolicy залежно від пільги учасника. */
     public void calculateFee(CrudPanel panel) {
         try {
-            FeeQuote quote = paymentController.calculateFee((Integer) panel.getValue("enrollment_id"));
+            int enrollmentId = (Integer) panel.getValue("enrollment_id");
+            FeeQuote quote = paymentController.calculateFee(enrollmentId);
             panel.setValue("amount", quote.getAmount());
             panel.showOk("<html>Тариф: " + quote.getMonthlyFee() + " грн; пільга: " + quote.getPolicyName()
                     + "<br>До сплати: " + quote.getAmount() + " грн</html>");
