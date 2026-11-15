@@ -2,11 +2,15 @@ package bdt.ui;
 
 import bdt.controller.ScheduleController;
 import bdt.controller.ScheduleException;
+import bdt.dao.DataException;
 import bdt.model.ScheduleEntry;
 import bdt.model.TimeSlot;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Window;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -27,8 +31,7 @@ public class SchedulePanel extends JPanel {
         public boolean isCellEditable(int r, int c) { return false; }
     };
     private final JTable table = new JTable(model);
-    private final JComboBox<String> dayFilter = new JComboBox<>(
-            new String[]{"Усі дні", "Понеділок", "Вівторок", "Середа", "Четвер", "П’ятниця", "Субота", "Неділя"});
+    private final JComboBox<String> dayFilter = new JComboBox<>(dayFilterItems());
     private final StatusLabel status = new StatusLabel();
 
     public SchedulePanel(ScheduleController controller, MainWindow main) {
@@ -56,13 +59,21 @@ public class SchedulePanel extends JPanel {
         reload();
     }
 
+    /** Пункти фільтра: «Усі дні» та сім днів тижня. */
+    private static String[] dayFilterItems() {
+        List<String> items = new ArrayList<>();
+        items.add("Усі дні");
+        items.addAll(Arrays.asList(TimeSlot.dayNames()));
+        return items.toArray(new String[0]);
+    }
+
     public void reload() {
         model.setRowCount(0);
         int day = dayFilter.getSelectedIndex();
         for (ScheduleEntry e : controller.getSchedule().getEntries()) {
             if (day > 0 && e.getSlot().getDay() != day) continue;
             model.addRow(new Object[]{e.getId(), TimeSlot.dayName(e.getSlot().getDay()), e.getSlot().timeText(),
-                    e.getSection().getName(), e.getSection().getLeader().getShortName(),
+                    e.getSection().getName(), e.getLeaderName(),
                     e.getRoom().getNumber() + " – " + e.getRoom().getType()});
         }
         status.showInfo("Записів у розкладі: " + model.getRowCount());
@@ -93,7 +104,7 @@ public class SchedulePanel extends JPanel {
             try {
                 controller.deleteEntry(id);
                 reload();
-            } catch (ScheduleException | bdt.dao.DataException ex) {
+            } catch (ScheduleException | DataException ex) {
                 status.showError(ex.getMessage());
             }
         }

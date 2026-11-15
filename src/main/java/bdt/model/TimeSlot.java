@@ -52,6 +52,9 @@ public final class TimeSlot {
     }
 
     public static String dayName(int day) { return DAYS_FULL[day - 1]; }
+
+    /** Повні назви днів тижня від понеділка до неділі (для списків вибору). */
+    public static String[] dayNames() { return DAYS_FULL.clone(); }
     public static String dayShort(int day) { return DAYS[day - 1]; }
 
     public String timeText() { return start.format(HM) + "–" + end.format(HM); }
