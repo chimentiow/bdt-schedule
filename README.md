@@ -23,6 +23,7 @@
 | `src/main/resources` | `schema.sql` (структура БД), `data.sql` (тестові дані), `queries.sql` (запити) |
 | `src/test/java/bdt/test` | драйвери та заглушки курсового проекту |
 | `src/test/java/bdt/test/junit` | автоматизовані тести JUnit |
+| `load-test` | тест-план Apache JMeter для навантажувального тестування |
 | `lib` | бібліотеки |
 
 ## Збирання та запуск
@@ -57,3 +58,7 @@ java -jar bdt.jar # або подвійне клацання на run.command / 
 
 Контролери тестуються із заглушками сховищ (`TestData`), обмеження бази даних – на базі H2
 в оперативній пам’яті (`TestDatabase`). Бібліотеки JUnit 4.13.2 і Hamcrest 1.3 лежать у `lib`.
+
+## Навантажувальне тестування
+
+Тест-план Apache JMeter і скрипт запуску лежать у папці `load-test`, опис – у `load-test/README.md`.
