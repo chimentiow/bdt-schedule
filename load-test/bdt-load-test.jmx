@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="ІС «Будинок дитячої творчості» – навантажувальне тестування" enabled="true">
+      <stringProp name="TestPlan.comments">Модуль «Розклад і облік занять»: операції прецедентів і запити до бази даних H2 під навантаженням</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="Параметри тесту" enabled="true">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="PROJECT_DIR" elementType="Argument">
+            <stringProp name="Argument.name">PROJECT_DIR</stringProp>
+            <stringProp name="Argument.value">${__P(projectDir,..)}</stringProp>
+            <stringProp name="Argument.desc">Папка проекту (у ній лежить src/main/resources/schema.sql)</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="THREADS" elementType="Argument">
+            <stringProp name="Argument.name">THREADS</stringProp>
+            <stringProp name="Argument.value">${__P(threads,10)}</stringProp>
+            <stringProp name="Argument.desc">Кількість одночасних користувачів</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="RAMP_UP" elementType="Argument">
+            <stringProp name="Argument.name">RAMP_UP</stringProp>
+            <stringProp name="Argument.value">${__P(rampup,5)}</stringProp>
+            <stringProp name="Argument.desc">Час наростання навантаження, с</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="LOOPS" elementType="Argument">
+            <stringProp name="Argument.name">LOOPS</stringProp>
+            <stringProp name="Argument.value">${__P(loops,30)}</stringProp>
+            <stringProp name="Argument.desc">Кількість повторень сценарію кожним користувачем</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="THINK_TIME" elementType="Argument">
+            <stringProp name="Argument.name">THINK_TIME</stringProp>
+            <stringProp name="Argument.value">${__P(think,100)}</stringProp>
+            <stringProp name="Argument.desc">Пауза між операціями, мс (до неї додається випадкова частина 0–100 мс)</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="EXTRA_ENTRIES" elementType="Argument">
+            <stringProp name="Argument.name">EXTRA_ENTRIES</stringProp>
+            <stringProp name="Argument.value">${__P(entries,480)}</stringProp>
+            <stringProp name="Argument.desc">Скільки записів розкладу додати до 20 тестових (разом 500)</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="DB_URL" elementType="Argument">
+            <stringProp name="Argument.name">DB_URL</stringProp>
+            <stringProp name="Argument.value">jdbc:h2:mem:bdt_load;DB_CLOSE_DELAY=-1</stringProp>
+            <stringProp name="Argument.desc">База даних H2 в оперативній пам’яті JMeter</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </Arguments>
+      <hashTree/>
+      <JDBCDataSource guiclass="TestBeanGUI" testclass="JDBCDataSource" testname="З’єднання з базою даних H2" enabled="true">
+        <boolProp name="autocommit">true</boolProp>
+        <stringProp name="checkQuery"></stringProp>
+        <stringProp name="connectionAge">5000</stringProp>
+        <stringProp name="connectionProperties"></stringProp>
+        <stringProp name="dataSource">bdt</stringProp>
+        <stringProp name="dbUrl">${DB_URL}</stringProp>
+        <stringProp name="driver">org.h2.Driver</stringProp>
+        <stringProp name="initQuery"></stringProp>
+        <boolProp name="keepAlive">true</boolProp>
+        <stringProp name="password"></stringProp>
+        <stringProp name="poolMax">0</stringProp>
+        <boolProp name="preinit">false</boolProp>
+        <stringProp name="timeout">10000</stringProp>
+        <stringProp name="transactionIsolation">DEFAULT</stringProp>
+        <stringProp name="trimInterval">60000</stringProp>
+        <stringProp name="username">sa</stringProp>
+      </JDBCDataSource>
+      <hashTree/>
+      <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="Підготовка бази даних" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">stoptest</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </SetupThreadGroup>
+      <hashTree>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="Очищення бази даних" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">DROP ALL OBJECTS</stringProp>
+          <stringProp name="queryArguments"></stringProp>
+          <stringProp name="queryArgumentsTypes"></stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Update Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="Створення таблиць (schema.sql)" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">RUNSCRIPT FROM '${PROJECT_DIR}/src/main/resources/schema.sql' CHARSET 'UTF-8'</stringProp>
+          <stringProp name="queryArguments"></stringProp>
+          <stringProp name="queryArgumentsTypes"></stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Update Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="Тестові дані (data.sql)" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">RUNSCRIPT FROM '${PROJECT_DIR}/src/main/resources/data.sql' CHARSET 'UTF-8'</stringProp>
+          <stringProp name="queryArguments"></stringProp>
+          <stringProp name="queryArgumentsTypes"></stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Update Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="Розширення розкладу до 500 записів" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">INSERT INTO schedule_entry (section_id, room_id, day_of_week, start_time, end_time)
+SELECT CASE MOD(X / 168 * 3 + MOD(X, 168), 8)
+            WHEN 0 THEN 1 WHEN 1 THEN 3 WHEN 2 THEN 4 WHEN 3 THEN 5
+            WHEN 4 THEN 6 WHEN 5 THEN 7 WHEN 6 THEN 9 ELSE 10 END,
+       1 + MOD(X / 168 + MOD(X, 168), 8),
+       1 + MOD(X, 168) / 24,
+       DATEADD('MINUTE', 30 * MOD(MOD(X, 168), 24), TIME '08:00:00'),
+       DATEADD('MINUTE', 30 * MOD(MOD(X, 168), 24) + 30, TIME '08:00:00')
+FROM SYSTEM_RANGE(0, ${EXTRA_ENTRIES} - 1)</stringProp>
+          <stringProp name="queryArguments"></stringProp>
+          <stringProp name="queryArgumentsTypes"></stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Update Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Користувачі" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">${LOOPS}</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">${THREADS}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${RAMP_UP}</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Пауза між операціями" enabled="true">
+          <stringProp name="ConstantTimer.delay">${THINK_TIME}</stringProp>
+          <stringProp name="RandomTimer.range">100.0</stringProp>
+        </UniformRandomTimer>
+        <hashTree/>
+        <OnceOnlyController guiclass="OnceOnlyControllerGui" testclass="OnceOnlyController" testname="Один раз для кожного користувача" enabled="true"/>
+        <hashTree>
+          <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="01 Запуск програми: завантаження розкладу" enabled="true">
+            <stringProp name="scriptLanguage">groovy</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="script">import bdt.controller.ScheduleController
+import bdt.dao.RoomCatalog
+import bdt.dao.ScheduleRepository
+import bdt.dao.SectionCatalog
+import bdt.db.Database
+
+// Те саме, що робить програма під час запуску: відкриває з'єднання з БД
+// і завантажує тижневий розклад у пам'ять. Виконується один раз для кожного користувача.
+Database db = new Database(vars.get('DB_URL'))
+ScheduleController controller =
+        new ScheduleController(new SectionCatalog(db), new RoomCatalog(db), new ScheduleRepository(db))
+vars.putObject('controller', controller)
+SampleResult.setResponseMessage('записів у розкладі: ' + controller.getSchedule().size())</stringProp>
+          </JSR223Sampler>
+          <hashTree/>
+        </hashTree>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="02 Додавання заняття: перевірка керівника і підбір приміщень" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">import bdt.controller.ScheduleController
+import bdt.controller.ScheduleException
+import java.time.LocalTime
+import java.util.concurrent.ThreadLocalRandom
+
+// Кроки 1-4 прецеденту «Додавання заняття до розкладу»: новий запис, вибір секції,
+// перевірка зайнятості керівника, підбір вільних приміщень. Секція, день і час (30 хв) випадкові.
+ScheduleController controller = (ScheduleController) vars.getObject('controller')
+ThreadLocalRandom random = ThreadLocalRandom.current()
+int sectionId = random.nextInt(1, 11)
+int day = random.nextInt(1, 8)
+LocalTime start = LocalTime.of(8, 0).plusMinutes(30L * random.nextInt(0, 24))
+try {
+    controller.newEntry()
+    controller.selectSection(sectionId)
+    controller.setTime(day, start, start.plusMinutes(30))
+    int free = controller.getFreeRooms().size()
+    SampleResult.setResponseMessage('керівник вільний, вільних приміщень: ' + free)
+} catch (ScheduleException refused) {
+    // відмова «керівник зайнятий» – штатний результат перевірки, а не помилка
+    SampleResult.setResponseMessage('відмова: ' + refused.getMessage())
+}</stringProp>
+        </JSR223Sampler>
+        <hashTree>
+          <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Не довше 1 с (вимога до продуктивності)" enabled="true">
+            <stringProp name="DurationAssertion.duration">1000</stringProp>
+          </DurationAssertion>
+          <hashTree/>
+        </hashTree>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="03 Перегляд розкладу (500 записів)" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">SELECT se.entry_id, se.day_of_week, se.start_time, se.end_time, s.section_id, s.name, s.direction, s.max_participants, s.monthly_fee, l.leader_id, l.last_name, l.first_name, l.middle_name, r.room_id, r.room_number, r.room_type, r.capacity FROM schedule_entry se JOIN section s ON s.section_id = se.section_id JOIN leader l ON l.leader_id = s.leader_id JOIN room r ON r.room_id = se.room_id</stringProp>
+          <stringProp name="queryArguments"></stringProp>
+          <stringProp name="queryArgumentsTypes"></stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="04 Журнал: проведені заняття секції" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">SELECT ls.lesson_date, ls.start_time, r.room_number, ls.topic, SUM(CASE WHEN a.present THEN 1 ELSE 0 END) || ' з ' || COUNT(a.participant_id) FROM lesson ls JOIN room r ON r.room_id = ls.room_id LEFT JOIN attendance a ON a.lesson_id = ls.lesson_id WHERE ls.section_id = ? GROUP BY ls.lesson_id, ls.lesson_date, ls.start_time, r.room_number, ls.topic ORDER BY ls.lesson_date DESC, ls.start_time DESC</stringProp>
+          <stringProp name="queryArguments">${__Random(1,10)}</stringProp>
+          <stringProp name="queryArgumentsTypes">INTEGER</stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Prepared Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="05 Запит: наповненість секцій" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">SELECT s.name, COUNT(e.enrollment_id), s.max_participants, CAST(ROUND(100.0 * COUNT(e.enrollment_id) / s.max_participants, 1) AS DECIMAL(5,1)) FROM section s LEFT JOIN enrollment e ON e.section_id = s.section_id AND e.status = 'Активний' GROUP BY s.section_id, s.name, s.max_participants ORDER BY COUNT(e.enrollment_id) DESC, s.name</stringProp>
+          <stringProp name="queryArguments"></stringProp>
+          <stringProp name="queryArgumentsTypes"></stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="06 Запит: боржники за місяць" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">SELECT p.last_name, p.first_name, s.name, p.parent_phone FROM enrollment e JOIN participant p ON p.participant_id = e.participant_id JOIN section s ON s.section_id = e.section_id LEFT JOIN payment pm ON pm.enrollment_id = e.enrollment_id AND pm.period = ? WHERE e.status = 'Активний' AND pm.payment_id IS NULL ORDER BY p.last_name, p.first_name</stringProp>
+          <stringProp name="queryArguments">2026-11</stringProp>
+          <stringProp name="queryArgumentsTypes">VARCHAR</stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Prepared Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="07 Облік заняття: збереження" enabled="true">
+          <stringProp name="dataSource">bdt</stringProp>
+          <stringProp name="query">INSERT INTO lesson (section_id, entry_id, room_id, leader_id, lesson_date, start_time, end_time, topic) SELECT s.section_id, NULL, 1, s.leader_id, DATEADD('DAY', ${__counter(FALSE,lessonNo)}, DATE '2030-01-01'), TIME '15:00:00', TIME '16:30:00', 'Навантажувальний тест' FROM section s WHERE s.section_id = ${__Random(1,10)}</stringProp>
+          <stringProp name="queryArguments"></stringProp>
+          <stringProp name="queryArgumentsTypes"></stringProp>
+          <stringProp name="queryTimeout"></stringProp>
+          <stringProp name="queryType">Update Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows"></stringProp>
+          <stringProp name="resultVariable"></stringProp>
+          <stringProp name="variableNames"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+      </hashTree>
+      <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <stringProp name="filename"></stringProp>
+      </ResultCollector>
+      <hashTree/>
+      <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <stringProp name="filename"></stringProp>
+      </ResultCollector>
+      <hashTree/>
+      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree (лише помилки)" enabled="true">
+        <boolProp name="ResultCollector.error_logging">true</boolProp>
+        <stringProp name="filename"></stringProp>
+      </ResultCollector>
+      <hashTree/>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
