@@ -19,8 +19,10 @@
 | `src/main/java/bdt/dao` | інтерфейси та класи доступу до даних |
 | `src/main/java/bdt/db` | з’єднання з базою даних |
 | `src/main/java/bdt/ui` | вікна та панелі інтерфейсу користувача |
+| `src/main/java/bdt/ui/form` | поля форм довідників |
 | `src/main/resources` | `schema.sql` (структура БД), `data.sql` (тестові дані), `queries.sql` (запити) |
-| `src/test/java` | драйвери та заглушки для тестування |
+| `src/test/java/bdt/test` | драйвери та заглушки курсового проекту |
+| `src/test/java/bdt/test/junit` | автоматизовані тести JUnit |
 | `lib` | бібліотеки |
 
 ## Збирання та запуск
@@ -38,8 +40,20 @@ java -jar bdt.jar # або подвійне клацання на run.command / 
 ## Тестування
 
 ```
-./test.sh
+./test.sh                    # усі тести
+./test.sh drivers            # драйвери курсового проекту (39 тестових варіантів)
+./test.sh junit              # тести JUnit (202 тести)
+./test.sh junit НазваКласу     # окремий клас тестів, наприклад SetTimeCauseEffectTest
 ```
 
-Скрипт компілює програму і запускає три драйвери: `ScheduleBasisPathDriver`,
-`ScheduleControllerDriver`, `IntegrationDriver` (39 тестових варіантів).
+Тести JUnit 4 лежать у пакеті `bdt.test.junit`:
+
+| Метод проектування тестів | Класи тестів | Тестів |
+|---|---|---|
+| Таблиці рішень | `LessonDecisionTableTest`, `AddEntryDecisionTableTest` | 24 |
+| Функціональні діаграми | `SetTimeCauseEffectTest`, `SetTimeResetsRoomTest` | 14 |
+| Класи еквівалентності | `TimeSlotEquivalenceTest`, `FeeEquivalenceTest`, `LessonInputEquivalenceTest`, `FormFieldEquivalenceTest`, `DatabaseConstraintsEquivalenceTest` | 77 |
+| Аналіз граничних значень | `TimeSlotBoundaryTest`, `OverlapBoundaryTest`, `CapacityAndFeeBoundaryTest`, `DatabaseBoundaryTest`, `TopicLengthBoundaryTest` | 87 |
+
+Контролери тестуються із заглушками сховищ (`TestData`), обмеження бази даних – на базі H2
+в оперативній пам’яті (`TestDatabase`). Бібліотеки JUnit 4.13.2 і Hamcrest 1.3 лежать у `lib`.
