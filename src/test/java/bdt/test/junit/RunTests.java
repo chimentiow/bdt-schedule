@@ -18,6 +18,11 @@ public final class RunTests {
         AddEntryDecisionTableTest.class,
         SetTimeCauseEffectTest.class,
         SetTimeResetsRoomTest.class,
+        TimeSlotEquivalenceTest.class,
+        FeeEquivalenceTest.class,
+        LessonInputEquivalenceTest.class,
+        FormFieldEquivalenceTest.class,
+        DatabaseConstraintsEquivalenceTest.class,
     };
 
     private RunTests() {
