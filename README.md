@@ -43,7 +43,7 @@ java -jar bdt.jar # або подвійне клацання на run.command / 
 ```
 ./test.sh                    # усі тести
 ./test.sh drivers            # драйвери курсового проекту (39 тестових варіантів)
-./test.sh junit              # тести JUnit (202 тести)
+./test.sh junit              # тести JUnit (203 тести)
 ./test.sh junit НазваКласу     # окремий клас тестів, наприклад SetTimeCauseEffectTest
 ```
 
@@ -52,7 +52,7 @@ java -jar bdt.jar # або подвійне клацання на run.command / 
 | Метод проектування тестів | Класи тестів | Тестів |
 |---|---|---|
 | Таблиці рішень | `LessonDecisionTableTest`, `AddEntryDecisionTableTest` | 24 |
-| Функціональні діаграми | `SetTimeCauseEffectTest`, `SetTimeResetsRoomTest` | 14 |
+| Функціональні діаграми | `SetTimeCauseEffectTest`, `SetTimeResetsRoomTest` | 15 |
 | Класи еквівалентності | `TimeSlotEquivalenceTest`, `FeeEquivalenceTest`, `LessonInputEquivalenceTest`, `FormFieldEquivalenceTest`, `DatabaseConstraintsEquivalenceTest` | 77 |
 | Аналіз граничних значень | `TimeSlotBoundaryTest`, `OverlapBoundaryTest`, `CapacityAndFeeBoundaryTest`, `DatabaseBoundaryTest`, `TopicLengthBoundaryTest` | 87 |
 
